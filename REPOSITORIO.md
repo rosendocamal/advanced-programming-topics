@@ -134,15 +134,20 @@ La consolidación del código en la rama de producción es regulada a través de
 
 Ciertos escenarios operacionales de complejidad técnica superior requieren atención especializada y no forman parte del flujo ordinario de trabajo. Dichos eventos deben ser gestionados con extrema precaución.
 
-* **Resolución de Conflictos de Fusión (*Merge Conflicts*):** Ocurren cuando modificaciones incompatibles son introducidas de forma simultánea sobre las mismas líneas de un archivo por distintos colaboradores. 
-	> [!NOTE]
-	>  La metodología de resolución manual de conflictos mediante la edición de marcas de divergencia (`<<<<<<<`, `=======`, `>>>>>>>`) debe ser investigada de forma independiente.
-* **Reversión de Confirmaciones (*Git Revert / Reset*):** La alteración o anulación del historial de cambios en ramas compartidas debe ser evitada salvo instrucciones explícitas de la administración. 
-	> [!NOTE]
-	> La teoría sobre la manipulación del árbol de historial de Git debe ser objeto de estudio específico.
+* **Resolución de Conflictos de Fusión (*Merge Conflicts*):** Ocurren cuando modificaciones incompatibles son introducidas de forma simultánea sobre las mismas líneas de un archivo por distintos colaboradores.
+
+> [!NOTE]
+> La metodología de resolución manual de conflictos mediante la edición de marcas de divergencia (`<<<<<<<`, `=======`, `>>>>>>>`) debe ser investigada de forma independiente.
+
+* **Reversión de Confirmaciones (*Git Revert / Reset*):** La alteración o anulación del historial de cambios en ramas compartidas debe ser evitada salvo instrucciones explícitas de la administración.
+  
+> [!NOTE]
+> La teoría sobre la manipulación del árbol de historial de Git debe ser objeto de estudio específico.
+
 * **Reorganización del Historial (*Git Rebase*):** La reestructuración lineal de solicitudes de extracción avanzadas exige un dominio profundo de las herramientas de CLI.
-	> [!NOTE]
-	> La documentación oficial sobre el comando `git rebase` debe ser consultada con carácter previo a su aplicación en entornos de producción.
+  
+> [!NOTE]
+> La documentación oficial sobre el comando `git rebase` debe ser consultada con carácter previo a su aplicación en entornos de producción.
 
 ## Notas
 
