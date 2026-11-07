@@ -1,5 +1,5 @@
 import flet as ft
-from components import Platilla
+from components import BotonQueDesaparece
 
 def main(page: ft.Page):
     page.title = "Tópicos Avanzados de Programación"
@@ -7,6 +7,7 @@ def main(page: ft.Page):
     page.horizontal_alignment = ft.CrossAxisAlignment.CENTER
 
     counter = ft.Text("0", size=50, data=0)
+    button_example = BotonQueDesaparece("print('Hello, World!')")
 
     def increment_click(e: ft.Event[ft.FloatingActionButton]):
         counter.data += 1
@@ -22,7 +23,8 @@ def main(page: ft.Page):
                 content=counter,
                 alignment=ft.Alignment.CENTER,
             ),
-        )
+        ),
+        button_example
     )
 
 

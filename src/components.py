@@ -1,7 +1,7 @@
 import flet as ft
 
 
-class Platilla(ft.Container):
+class BotonQueDesaparece(ft.Container):
 
     def __init__(self, codigo_fuente: str):
         super().__init__(self)
