@@ -32,7 +32,7 @@ La fase de aprovisionamiento del entorno centralizado es ejecutada de forma excl
    * La aprobación formal por parte del rol Administrador o revisor designado es configurada como requisito indispensable para la integración de código.
 
 
-## 3. Protocolo de Trabajo Local y Flujo Operativo (Todos los Roles)
+## 3. Protocolo de Trabajo Local y Flujo Operativo
 
 El ciclo de desarrollo continuo es ejecutado de manera uniforme por todos los participantes del proyecto, observando la separación entre el código de producción y el desarrollo de funcionalidades.
 
