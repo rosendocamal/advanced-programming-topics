@@ -1,5 +1,8 @@
 # Manual de Procedimientos y Gobernanza para la Gestión Colaborativa de Repositorios en GitHub
 
+> [!IMPORTANT]
+> Este documento tiene como único objetivo el ser didáctico y divulgativo. Este archivo no pretende actuar como un manual.
+
 ## 1. Declaración de Principios y Estructura de Control
 
 La administración y el desarrollo colaborativo de software mediante repositorios distribuidos en la plataforma GitHub exigen la observación rigurosa de un protocolo estandarizado. La integridad del código fuente, la trazabilidad de los cambios y la segregación de responsabilidades son garantizadas a través de este marco operativo.
@@ -45,7 +48,7 @@ flowchart TD
         A["[ Repositorio Remoto ]"]
         F["[ Repositorio Remoto ]"]
         G["[ Apertura de Pull Request (PR) ]"]
-        H["[ Revisión / Merge a 'main' por el Admin ]"]
+        H["[ Revisión / Merge a 'main' por el administrador ]"]
     end
 
     subgraph Local_Workstation ["Entorno Local"]
@@ -55,9 +58,9 @@ flowchart TD
     end
 
     A -->|"1. git clone"| B
-    B -->|"2. git checkout -b feature/nueva-funcionalidad"| C
+    B -->|"2. git switch -c username_branch develop + uv lock + uv sync" | C
     C -->|"3. Desarrollo + git add . + git commit"| D
-    D -->|"4. git push origin feature/nueva-funcionalidad"| F
+    D -->|"4. git push origin username_branch"| F
     F -->|"5. Solicitud de integración"| G
     G --> H
 
@@ -71,22 +74,22 @@ flowchart TD
 1. **Clonación del Repositorio:**
    * La réplica local del repositorio remoto es obtenida mediante la ejecución del comando:
      ```bash
-     git clone <URL_DEL_REPOSITORIO>
+     git clone [repo_url]
      ```
    * La navegación hacia el directorio de trabajo es realizada a través de la instrucción:
      ```bash
-     cd <NOMBRE_DEL_REPOSITORIO>
+     cd [repo_name]
      ```
 
 2. **Aislamiento de Funcionalidades mediante Ramificaciones:**
    * La sincronización previa de la rama principal es ejecutada:
      ```bash
-     git checkout main
+     git switch main
      git pull origin main
      ```
    * Una rama secundaria es creada y seleccionada para el desarrollo de la tarea específica:
      ```bash
-     git checkout -b feature/denominacion-de-la-tarea
+     git switch -c [username_branch] develop
      ```
 
 3. **Confirmación de Cambios (*Commits*):**
@@ -103,7 +106,7 @@ flowchart TD
 4. **Publicación Remota de la Rama:**
    * La rama de trabajo local es transferida al servidor remoto:
      ```bash
-     git push -u origin feature/denominacion-de-la-tarea
+     git push -u origin [username_branch]
      ```
 
 
@@ -125,10 +128,9 @@ La consolidación del código en la rama de producción es regulada a través de
 3. **Re-sincronización del Entorno Local (Todos los Roles):**
    * La rama principal local es re-seleccionada y actualizada tras la inclusión de nuevos cambios:
      ```bash
-     git checkout main
+     git switch main
      git pull origin main
      ```
-
 
 ## 5. Consideraciones Adicionales y Aspectos Avanzados de Operación
 

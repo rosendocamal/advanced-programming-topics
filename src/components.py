@@ -1,7 +1,7 @@
 import flet as ft
 
 
-class BotonConSnippet(ft.Container):
+class Platilla(ft.Container):
 
     def __init__(self, codigo_fuente: str):
         super().__init__(self)
