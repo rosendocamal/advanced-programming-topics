@@ -1,37 +1,52 @@
 import flet as ft
 
+def opacity_animation():
+    def animate_opacity(e: ft.Event[ft.Button]):
+        container.opacity = 0 if container.opacity == 1 else 1
+        container.update()    
 
-class BotonQueDesaparece(ft.Container):
-
-    def __init__(self, codigo_fuente: str):
-        super().__init__(self)
-        self.codigo_fuente = codigo_fuente
-
-        # Definimos el botón inicial dentro del componente
-        self.boton = ft.Button(
-            content="Mostrar código fuente",
-            icon=ft.Icons.CODE,
-            bgcolor=ft.Colors.BLUE_GREY_800,
-            color=ft.Colors.WHITE,
-            on_click=self.revelar_codigo,
-        )
-
-        # El contenedor arranca mostrando el botón
-        self.content = self.boton
-        self.padding = 10
-
-    def revelar_codigo(self, e):
-        # Al hacer clic, reemplazamos el contenido del contenedor
-        # El botón desaparece y se dibuja un bloque de texto con el código
-        self.content = ft.Container(
-            content=ft.Text(
-                self.codigo_fuente,
-                font_family="monospace",
-                color=ft.Colors.GREEN_ACCENT_400,
+    return ft.SafeArea(
+            content=ft.Column(
+                controls=[
+                    container := ft.Container(
+                        width=150,
+                        height=150,
+                        bgcolor=ft.Colors.BLUE,
+                        border_radius=10,
+                        animate_opacity=300,
+                        align=ft.Alignment.CENTER
+                    ),
+                    ft.Button(
+                        content="¡Tocáme!",
+                        on_click=animate_opacity,
+                        align=ft.Alignment.CENTER
+                    ),
+                ],
             ),
-            bgcolor=ft.Colors.BLACK_87,
-            padding=15,
-            border_radius=8,
         )
-        # Actualizamos el componente para que refleje el cambio en la interfaz
-        self.update()
+
+code_opacity_animation = """
+def opacity_animation():
+    def animate_opacity(e: ft.Event[ft.Button]):
+        container.opacity = 0 if container.opacity == 1 else 1
+        container.update()
+
+    return ft.SafeArea(
+            content=ft.Column(
+                controls=[
+                    container := ft.Container(
+                        width=150,
+                        height=150,
+                        bgcolor=ft.Colors.BLUE,
+                        border_radius=10,
+                        animate_opacity=300,
+                        align=ft.Alignment.CENTER
+                    ),
+                    ft.Button(
+                        content="¡Tocáme!",
+                        on_click=animate_opacity,
+                        align=ft.Alignment.CENTER
+                    ),
+                ],
+            ),
+        )"""
