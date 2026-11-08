@@ -1,6 +1,6 @@
 import flet as ft
 import threading
-import components as cp
+import components as widget
 
 
 class State:
@@ -9,8 +9,6 @@ class State:
 s = State()
 sem = threading.Semaphore()
 
-def show_code(string = str()):
-    return string
 
 def main(page: ft.Page):
     page.title = "Tópicos Avanzados de Programación"
@@ -20,6 +18,16 @@ def main(page: ft.Page):
     page.adaptive = True
 
 
+    code_txt = ft.Text(
+        value="Selecciona un botón para generar un evento.",
+        color=ft.Colors.PINK_ACCENT,
+        italic=True,
+    )
+
+    def show_code(code = str()):
+        code_txt.value = code
+        code_txt.update()
+
     def on_scroll(e: ft.OnScrollEvent):
         if e.pixels >= e.max_scroll_extent - 100 and sem.acquire(blocking=False):
             try:
@@ -27,7 +35,8 @@ def main(page: ft.Page):
             finally:
                 sem.release()
 
-    left_column_content = (cp.opacity_animation(), cp.opacity_animation(), cp.opacity_animation())
+    # Aquí es donde se agregarán las animaciones de components.py
+    left_column_content = (widget.opacity_animation(show_code), widget.rotation_animation(show_code), widget.scale_animation(show_code))
 
     left_column = ft.GridView(
                             expand=True,
@@ -46,10 +55,7 @@ def main(page: ft.Page):
                             scroll=ft.ScrollMode.ALWAYS,
                             scroll_interval=0,
                             on_scroll=on_scroll,
-                            controls=ft.Text(
-                                value=show_code(),
-                                color=ft.Colors.PINK_ACCENT, 
-                                italic=True),
+                            controls=[code_txt]
                         )
 
     page.add(
