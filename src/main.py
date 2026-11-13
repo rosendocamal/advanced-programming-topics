@@ -36,7 +36,14 @@ def main(page: ft.Page):
                 sem.release()
 
     # Aquí es donde se agregarán las animaciones de components.py
-    left_column_content = (widget.opacity_animation(show_code), widget.rotation_animation(show_code), widget.scale_animation(show_code))
+    left_column_content = (
+        widget.opacity_animation(show_code),
+        widget.rotation_animation(show_code),
+        widget.scale_animation(show_code),
+        widget.color_morph_animation(show_code),
+        widget.offset_slide_animation(show_code),
+        widget.flip_switcher_animation(show_code),
+    )
 
     left_column = ft.GridView(
                             expand=True,
