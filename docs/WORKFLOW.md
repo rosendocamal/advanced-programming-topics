@@ -1,5 +1,8 @@
 # Gitflow y Trunk-Based Development
 
+> [!IMPORTANT]
+> Este documento tiene como único objetivo el ser didáctico y divulgativo. Este archivo no pretende actuar como un manual.
+
 ## 1. Modelo Gitflow
 
 _Gitflow_ es una estrategia de control de versiones fundamentada en el aislamiento de fases mediante ramas estandarizadas de larga y corta duración.
