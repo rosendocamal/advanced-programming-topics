@@ -1,5 +1,5 @@
 import flet as ft
-import threading
+import threading, tkinter
 import components as widget
 
 
@@ -9,17 +9,28 @@ class State:
 s = State()
 sem = threading.Semaphore()
 
+tk = tkinter.Tk()
+SCREEN_WIDTH = tk.winfo_screenwidth()
+SCREEN_HEIGHT = tk.winfo_screenheight()
+SCREEN_800 = int(SCREEN_WIDTH / 2.4)
 
 def main(page: ft.Page):
     page.title = "Tópicos Avanzados de Programación"
     page.vertical_alignment = ft.MainAxisAlignment.SPACE_BETWEEN
     page.horizontal_alignment = ft.CrossAxisAlignment.STRETCH
     page.theme_mode = ft.ThemeMode.DARK
-    page.adaptive = True
+    page.adaptive = False
+    page.window.resizable = True
+    page.window.width = SCREEN_WIDTH
+    page.window.height = SCREEN_HEIGHT
+    page.window.focused = False
+    page.window.prevent_close = True
+    page.window.full_screen = False
 
 
+    code_txt_value = "Selecciona un botón para generar un evento."
     code_txt = ft.Text(
-        value="Selecciona un botón para generar un evento.",
+        value=code_txt_value,
         color=ft.Colors.PINK_ACCENT,
         italic=True,
     )
@@ -27,6 +38,23 @@ def main(page: ft.Page):
     def show_code(code = str()):
         code_txt.value = code
         code_txt.update()
+
+    def clean_code():
+        code_txt.value = code_txt_value
+        code_txt.update()
+
+    async def close_app():
+        await page.window.destroy()
+
+    def full_screen_app():
+        page.window.full_screen = True
+        button_full_screen_app.icon = ft.Icons.FULLSCREEN_EXIT
+        button_full_screen_app.on_click = full_screen_exit_app
+
+    def full_screen_exit_app():
+        page.window.full_screen = False
+        button_full_screen_app.icon = ft.Icons.FULLSCREEN
+        button_full_screen_app.on_click = full_screen_app
 
     def on_scroll(e: ft.OnScrollEvent):
         if e.pixels >= e.max_scroll_extent - 100 and sem.acquire(blocking=False):
@@ -43,6 +71,7 @@ def main(page: ft.Page):
         widget.color_morph_animation(show_code),
         widget.offset_slide_animation(show_code),
         widget.flip_switcher_animation(show_code),
+        widget.sunflower_animation(show_code),
     )
 
     left_column = ft.GridView(
@@ -58,12 +87,14 @@ def main(page: ft.Page):
                         )
 
     right_column = ft.Column(
-                            width=800,
+                            width=SCREEN_800,
                             scroll=ft.ScrollMode.ALWAYS,
                             scroll_interval=0,
                             on_scroll=on_scroll,
                             controls=[code_txt]
                         )
+
+    button_full_screen_app = ft.IconButton(hover_color=ft.Colors.PINK_ACCENT, icon=ft.Icons.FULLSCREEN, icon_color=ft.Colors.WHITE, on_click=full_screen_app)
 
     page.add(
         ft.SafeArea(
@@ -72,28 +103,42 @@ def main(page: ft.Page):
                 expand=True,
                 controls=[
                     ft.Container(
-                        width=800,
-                        height=800,
+                        width=SCREEN_800,
+                        height=SCREEN_800,
                         expand=True,
                         margin=15,
                         padding=30,
                         bgcolor=ft.Colors.PINK_ACCENT,
-                        border_radius=10,
+                        border_radius=20,
                         content=left_column,
                         alignment=ft.Alignment.CENTER,
-                    ), ft.Container(
-                        width=800,
-                        height=800,
+                    ),
+                    ft.Container(
+                        width=SCREEN_800,
+                        height=SCREEN_800,
                         expand=True,
                         margin=15,
                         padding=30,
                         bgcolor=ft.Colors.WHITE_10,
-                        border_radius=10,
+                        border_radius=20,
                         content=right_column,
                         alignment=ft.Alignment.TOP_LEFT,
                     ),
                 ]
             )
+        ),
+        ft.BottomAppBar(
+            margin=15,
+            border_radius=ft.BorderRadius.all(20),
+            bgcolor=ft.Colors.PINK_ACCENT_100,
+            content=ft.Row(
+                controls=[
+                    ft.Container(expand=True),
+                    ft.IconButton(hover_color=ft.Colors.PINK_ACCENT, icon=ft.Icons.CLEAR_ROUNDED, icon_color=ft.Colors.WHITE, on_click=clean_code),
+                    button_full_screen_app,
+                    ft.IconButton(hover_color=ft.Colors.PINK_ACCENT, icon=ft.Icons.EXIT_TO_APP, icon_color=ft.Colors.WHITE, on_click=close_app, on_long_press=close_app),
+                ]
+            ),
         )
     )
 
