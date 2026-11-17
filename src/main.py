@@ -36,7 +36,7 @@ def main(page: ft.Page):
                 sem.release()
 
     # Aquí es donde se agregarán las animaciones de components.py
-    left_column_content = (widget.opacity_animation(show_code), widget.rotation_animation(show_code), widget.scale_animation(show_code))
+    left_column_content = (widget.opacity_animation(show_code), widget.rotation_animation(show_code), widget.scale_animation(show_code), widget.rubik_cube_component(show_code))
 
     left_column = ft.GridView(
                             expand=True,
