@@ -43,6 +43,9 @@ def main(page: ft.Page):
         widget.color_morph_animation(show_code),
         widget.offset_slide_animation(show_code),
         widget.flip_switcher_animation(show_code),
+        widget.heart_animation(show_code),
+        widget.phone_animation(show_code),
+        widget.ball_animation(show_code),
     )
 
     left_column = ft.GridView(
