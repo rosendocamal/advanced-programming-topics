@@ -24,7 +24,7 @@ def main(page: ft.Page):
     page.window.width = SCREEN_WIDTH
     page.window.height = SCREEN_HEIGHT
     page.window.focused = False
-    page.window.prevent_close = True
+    page.window.prevent_close = False
     page.window.full_screen = False
 
 
