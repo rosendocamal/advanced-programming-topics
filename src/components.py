@@ -353,3 +353,167 @@ def sunflower_animation(callback):
             controls=[flower_preview, button],
         ),
     )
+
+
+def timer_animation(callback):
+    DIALOG_WIDTH = 760
+    DIALOG_HEIGHT = 620
+
+    def open_timer(event: ft.Event[ft.Button]):
+        import asyncio
+        import time
+        page = event.control.page
+        state = {
+            "elapsed": 0,
+            "started_at": 0.0,
+            "running": False,
+            "closed": False,
+            "task": None,
+        }
+
+        def format_hhmmss(seconds: int) -> str:
+            hours, remainder = divmod(seconds, 3600)
+            minutes, seconds = divmod(remainder, 60)
+            return f"{hours:02}:{minutes:02}:{seconds:02}"
+
+        def elapsed_seconds() -> int:
+            if state["running"]:
+                return state["elapsed"] + int(
+                    time.monotonic() - state["started_at"]
+                )
+            return state["elapsed"]
+
+        timer_text = ft.Text(
+            "00:00:00",
+            size=30,
+            weight=ft.FontWeight.BOLD,
+        )
+        start_button = ft.FilledButton(
+            "Iniciar",
+            icon=ft.Icons.PLAY_ARROW,
+        )
+        stop_button = ft.TextButton(
+            "Detener",
+            icon=ft.Icons.STOP,
+            disabled=True,
+        )
+
+        def refresh():
+            timer_text.value = format_hhmmss(elapsed_seconds())
+            start_button.content = "Pausar" if state["running"] else "Iniciar"
+            start_button.icon = (
+                ft.Icons.PAUSE if state["running"] else ft.Icons.PLAY_ARROW
+            )
+            stop_button.disabled = (
+                not state["running"] and state["elapsed"] == 0
+            )
+            timer_text.update()
+            start_button.update()
+            stop_button.update()
+
+        async def tick():
+            while not state["closed"]:
+                if state["running"]:
+                    timer_text.value = format_hhmmss(elapsed_seconds())
+                    timer_text.update()
+                await asyncio.sleep(1)
+
+        def toggle_timer(_event: ft.Event[ft.FilledButton]):
+            if state["running"]:
+                state["elapsed"] = elapsed_seconds()
+                state["running"] = False
+            else:
+                state["started_at"] = time.monotonic()
+                state["running"] = True
+                task = state["task"]
+                if task is None or task.done():
+                    state["task"] = page.run_task(tick)
+            refresh()
+
+        def stop_timer(_event: ft.Event[ft.TextButton]):
+            state["running"] = False
+            state["elapsed"] = 0
+            refresh()
+
+        start_button.on_click = toggle_timer
+        stop_button.on_click = stop_timer
+
+        def close_timer(_event: ft.Event[ft.IconButton]):
+            state["closed"] = True
+            task = state["task"]
+            if task is not None:
+                task.cancel()
+            page.pop_dialog()
+            callback(inspect.getsource(timer_animation))
+
+        close_button = ft.IconButton(
+            icon=ft.Icons.CLOSE,
+            tooltip="Cerrar temporizador",
+            on_click=close_timer,
+        )
+
+        page.show_dialog(
+            ft.AlertDialog(
+                modal=True,
+                alignment=ft.Alignment.CENTER,
+                content_padding=0,
+                content=ft.Container(
+                    width=DIALOG_WIDTH,
+                    height=DIALOG_HEIGHT,
+                    padding=20,
+                    content=ft.Column(
+                        horizontal_alignment=ft.CrossAxisAlignment.CENTER,
+                        expand=True,
+                        controls=[
+                            ft.Row(
+                                controls=[
+                                    ft.Text("Timer", size=20, expand=True),
+                                    close_button,
+                                ],
+                                vertical_alignment=ft.CrossAxisAlignment.CENTER,
+                            ),
+                            ft.Container(
+                                content=ft.Column(
+                                    spacing=20,
+                                    horizontal_alignment=ft.CrossAxisAlignment.CENTER,
+                                    alignment=ft.MainAxisAlignment.CENTER,
+                                    controls=[
+                                        timer_text,
+                                        ft.Row(
+                                            alignment=ft.MainAxisAlignment.CENTER,
+                                            controls=[start_button, stop_button],
+                                        ),
+                                    ],
+                                ),
+                                alignment=ft.Alignment.CENTER,
+                                expand=True,
+                            ),
+                        ],
+                    ),
+                ),
+            ),
+        )
+        callback(inspect.getsource(timer_animation))
+
+    container = ft.Container(
+        width=CONST_WIDTH,
+        height=CONST_HEIGHT,
+        content=ft.Icon(
+            ft.Icons.TIMER,
+            size=90,
+            color=ft.Colors.WHITE_54,
+        ),
+        alignment=ft.Alignment.CENTER,
+    )
+    button = ft.Button(
+        content="¡Apúrate!",
+        on_click=open_timer,
+        align=ft.Alignment.CENTER,
+    )
+
+    return ft.SafeArea(
+        content=ft.Column(
+            horizontal_alignment=ft.CrossAxisAlignment.CENTER,
+            controls=[container, button],
+        ),
+    )
