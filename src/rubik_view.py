@@ -81,7 +81,8 @@ ALL_STANDARD_MOVES = [
 ]
 
 SPEED_PRESETS = [
-    ("1x", 0.24, 0.30), ("2x", 0.12, 0.15), ("4x", 0.055, 0.07), ("0.5x", 0.85, 0.85),]
+    ("1x", 0.24, 0.30), ("2x", 0.12, 0.15), ("4x", 0.055, 0.07), ("0.5x", 0.85, 0.85),
+]
 
 
 def _ensure_sound_assets() -> tuple[Path, Path]:
@@ -554,10 +555,19 @@ def open_rubik_interface(page: ft.Page):
     mini_drag = {"start_x": 0.0, "start_y": 0.0}
 
     status_banner = ft.Text(
-        "Elige un color de la paleta para pintar, o usa 'Armar Manualmente' / 'Escanear Cámara'.", size=13, color="#80DEEA", text_align=ft.TextAlign.CENTER,)
+        "Elige un color de la paleta para pintar, o usa 'Armar Manualmente' / 'Escanear Cámara'.",
+        size=13,
+        color="#80DEEA",
+        text_align=ft.TextAlign.CENTER,
+    )
 
     step_instruction = ft.Text(
-        "Estado inicial: Cubo resuelto (9/9 en cada color)", size=15, weight=ft.FontWeight.BOLD, color="#FFFFFF", text_align=ft.TextAlign.CENTER,)
+        "Estado inicial: Cubo resuelto (9/9 en cada color)",
+        size=15,
+        weight=ft.FontWeight.BOLD,
+        color="#FFFFFF",
+        text_align=ft.TextAlign.CENTER,
+    )
 
     progress_text = ft.Text("Paso 0 / 0", size=12, color="#9E9E9E")
 
@@ -1216,7 +1226,6 @@ def open_rubik_interface(page: ft.Page):
         style=ft.ButtonStyle(bgcolor="#00C853", color="#000000"),
     )
     cam_prev_btn = ft.OutlinedButton("Anterior", icon=ft.Icons.SKIP_PREVIOUS)
-    cam_switch_btn = ft.OutlinedButton("Cambiar Cámara", icon=ft.Icons.FLIP_CAMERA_IOS, visible=False)
     cam_cancel_btn = ft.OutlinedButton("Volver", icon=ft.Icons.ARROW_BACK)
 
     camera_panel = ft.Column(
@@ -1263,7 +1272,7 @@ def open_rubik_interface(page: ft.Page):
             ft.Row(
                 alignment=ft.MainAxisAlignment.CENTER,
                 spacing=10,
-                controls=[cam_capture_btn, cam_prev_btn, cam_switch_btn, cam_cancel_btn],
+                controls=[cam_capture_btn, cam_prev_btn, cam_cancel_btn],
             ),
         ],
     )
@@ -1535,18 +1544,8 @@ def open_rubik_interface(page: ft.Page):
             status_banner.color = "#80DEEA"
             page.update()
 
-    def switch_camera_device(e=None):
-        cams = cam_state["available_cams"]
-        if len(cams) <= 1:
-            return
-        cam_state["cam_pos"] = (cam_state["cam_pos"] + 1) % len(cams)
-        cam_state["cam_idx"] = cams[cam_state["cam_pos"]]
-        cam_switch_btn.text = f"Cambiar Cámara ({cam_state['cam_pos'] + 1}/{len(cams)})"
-        page.update()
-
     cam_capture_btn.on_click = capture_current_face
     cam_prev_btn.on_click = prev_camera_face
-    cam_switch_btn.on_click = switch_camera_device
     cam_cancel_btn.on_click = lambda e: exit_camera_mode(completed=False)
 
     def on_key_event(e: ft.KeyboardEvent):
@@ -1664,9 +1663,6 @@ def open_rubik_interface(page: ft.Page):
         mini_rot[0] = _make_cam_mat(*FACE_3D_ANGLES["F"])
         mini_manual_orbit[0] = False
 
-        cam_switch_btn.visible = len(available_cams) > 1
-        cam_switch_btn.text = f"Cambiar Cámara (1/{len(available_cams)})"
-
         cube_view_panel.visible = False
         brush_section.visible = False
         manual_play_section.visible = False
@@ -1773,7 +1769,12 @@ def open_rubik_interface(page: ft.Page):
         ),
     )
 
-    modal_overlay = ft.Container( bgcolor="#B3000000", expand=True, alignment=ft.Alignment(0, 0), content=dialog_card,)
+    modal_overlay = ft.Container(
+        bgcolor="#B3000000",
+        expand=True,
+        alignment=ft.Alignment(0, 0),
+        content=dialog_card,
+    )
 
     page.overlay.append(modal_overlay)
     page.update()
