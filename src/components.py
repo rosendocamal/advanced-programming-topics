@@ -517,3 +517,132 @@ def timer_animation(callback):
             controls=[container, button],
         ),
     )
+
+def video_animation(callback):
+    import os
+    from pathlib import Path
+    from urllib.parse import quote
+
+    import flet_video as ftv
+
+    DIALOG_WIDTH = 760
+    DIALOG_HEIGHT = 620
+    video_filename = "Wonder Girls ＂Why So Lonely＂ M⧸V [PYGODWJgR-c].mp4"
+    assets_dir = Path(
+        os.environ.get("FLET_ASSETS_DIR", Path(__file__).parent / "assets")
+    )
+    video_path = assets_dir / video_filename
+
+    def open_video(event: ft.Event[ft.Button]):
+        if not video_path.is_file():
+            raise FileNotFoundError(f"No se encontró el vídeo: {video_path}")
+
+        page = event.control.page
+        video_controls = (
+            ftv.MaterialVideoControls(
+                display_seek_bar=False,
+                primary_button_bar=[ftv.VideoPlayOrPauseButton()],
+                bottom_button_bar=[ftv.VideoFullscreenButton()],
+                volume_gesture=True,
+                brightness_gesture=True,
+                visible_on_mount=True,
+            )
+            if page.web
+            else ftv.AdaptiveVideoControls(
+                material=ftv.MaterialVideoControls(
+                    display_seek_bar=False,
+                    primary_button_bar=[ftv.VideoPlayOrPauseButton()],
+                    bottom_button_bar=[ftv.VideoFullscreenButton()],
+                    volume_gesture=True,
+                    brightness_gesture=True,
+                    visible_on_mount=True,
+                ),
+                material_desktop=ftv.MaterialDesktopVideoControls(
+                    display_seek_bar=False,
+                    primary_button_bar=[ftv.VideoPlayOrPauseButton()],
+                    bottom_button_bar=[
+                        ftv.VideoVolumeButton(),
+                        ftv.VideoFullscreenButton(),
+                    ],
+                    visible_on_mount=True,
+                ),
+            )
+        )
+        video = ftv.Video(
+            expand=True,
+            autoplay=False,
+            playlist=[
+                ftv.VideoMedia(
+                    quote(video_filename) if page.web else str(video_path)
+                )
+            ],
+            controls=video_controls,
+        )
+        video_error = ft.Text(color=ft.Colors.RED, visible=False)
+
+        def on_video_error(e: ft.Event[ftv.Video]):
+            video_error.value = f"No se pudo reproducir el vídeo: {e.data}"
+            video_error.visible = True
+            video_error.update()
+
+        video.on_error = on_video_error
+
+        async def close_video(_event: ft.Event[ft.IconButton]):
+            await video.pause()
+            page.pop_dialog()
+            callback(inspect.getsource(video_animation))
+
+        page.show_dialog(
+            ft.AlertDialog(
+                modal=True,
+                alignment=ft.Alignment.CENTER,
+                content_padding=0,
+                content=ft.Container(
+                    width=DIALOG_WIDTH,
+                    height=DIALOG_HEIGHT,
+                    padding=20,
+                    content=ft.Column(
+                        expand=True,
+                        controls=[
+                            ft.Row(
+                                controls=[
+                                    ft.Text("Vídeo", size=20, expand=True),
+                                    ft.IconButton(
+                                        icon=ft.Icons.CLOSE,
+                                        tooltip="Cerrar vídeo",
+                                        on_click=close_video,
+                                    ),
+                                ],
+                                vertical_alignment=ft.CrossAxisAlignment.CENTER,
+                            ),
+                            video_error,
+                            ft.Container(content=video, expand=True),
+                        ],
+                    ),
+                ),
+            ),
+        )
+        callback(inspect.getsource(video_animation))
+
+    container = ft.Container(
+        width=CONST_WIDTH,
+        height=CONST_HEIGHT,
+        alignment=ft.Alignment.CENTER,
+        content=ft.Icon(
+            ft.Icons.PLAY_CIRCLE,
+            size=90,
+            color=ft.Colors.WHITE_54,
+        ),
+    )
+    button = ft.Button(
+        content="¡Reproduce!",
+        on_click=open_video,
+        align=ft.Alignment.CENTER,
+    )
+
+    return ft.SafeArea(
+        content=ft.Column(
+            horizontal_alignment=ft.CrossAxisAlignment.CENTER,
+            controls=[container, button],
+        ),
+    )

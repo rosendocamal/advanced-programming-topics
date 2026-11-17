@@ -73,6 +73,7 @@ def main(page: ft.Page):
         widget.flip_switcher_animation(show_code),
         widget.sunflower_animation(show_code),
         widget.timer_animation(show_code),
+        widget.video_animation(show_code),
     )
 
     left_column = ft.GridView(

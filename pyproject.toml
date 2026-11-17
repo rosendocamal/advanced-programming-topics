@@ -9,6 +9,7 @@ authors = [
 ]
 dependencies = [
     "flet>=1.1.2",
+    "flet-video>=1.1.2",
     "ruff>=0.17.4",
 ]
 
@@ -28,7 +29,7 @@ testpaths = ["tests"]
 pythonpath = ["src"]
 
 [tool.flet]
-desktop_flavor = "light"    # Change to "full" to use flet-audio and flet-video
+desktop_flavor = "full"
 org = "com.rosendocamal"
 product = "advanced-programming-topics"
 company = "Flet"

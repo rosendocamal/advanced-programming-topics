@@ -16,6 +16,7 @@ version = "0.1.0"
 source = { virtual = "." }
 dependencies = [
     { name = "flet" },
+    { name = "flet-video" },
     { name = "ruff" },
 ]
 
@@ -30,6 +31,7 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "flet", specifier = ">=1.1.2" },
+    { name = "flet-video", specifier = ">=1.1.2" },
     { name = "ruff", specifier = ">=0.17.4" },
 ]
 
@@ -432,6 +434,18 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/ba/e0/0d21c89b5f802452fd8966c816d677a744b3038787221c48cf0dadba99f3/flet_platform_assets-1.1.2.tar.gz", hash = "sha256:ad0ab121cddc2e6c8691c24b43f697fb5a31172c67f95444bb7ad7f9a92fc2f4", size = 39328, upload-time = "2026-11-06T23:28:53.432Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/f3/55/98c898a9e13d60492939188190f35a449df0c6d37fcd8d9a8381118010af/flet_platform_assets-1.1.2-py3-none-any.whl", hash = "sha256:c1214f2e3b9df3243fca288d36b8b19e520468f2975f70d602db568f650314b9", size = 27943, upload-time = "2026-11-06T23:28:52.505Z" },
+]
+
+[[package]]
+name = "flet-video"
+version = "1.1.2"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "flet" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/72/95/3460ca6f75aa7d375f158ab4158369a6964204178729ec16ee52df4a6160/flet_video-1.1.2.tar.gz", hash = "sha256:ac0d31a5f88a96794c11069e398538771e700bd455df1b7f7f477af8aa3e5a90", size = 24693, upload-time = "2026-11-06T23:29:44.632Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/d1/52/07bc5487f38cf7111e5e4beb55d75d6d56bb1e3144129bdb4937040c8abc/flet_video-1.1.2-py3-none-any.whl", hash = "sha256:ff8414a7a60a97ffb7d8f62733e572db4a60be60e99cfb16edeaefdb5caa9f2a", size = 26249, upload-time = "2026-11-06T23:29:43.799Z" },
 ]
 
 [[package]]
