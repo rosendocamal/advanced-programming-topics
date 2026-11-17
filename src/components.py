@@ -125,6 +125,30 @@ def rubik_cube_component(callback):
         callback(inspect.getsource(rubik_cube_component))
         open_rubik_interface(e.page)
 
+    def shuffle_preview(e):
+        for cell in mini_grid.controls:
+            cell.bgcolor = random.choice(palette)
+        mini_grid.update()
+        callback(inspect.getsource(rubik_cube_component))
+
+    def enter_rubik_ui(e: ft.Event[ft.Button]):
+        callback(inspect.getsource(rubik_cube_component))
+        open_rubik_interface(e.page)
+
+    return ft.SafeArea(
+        content=ft.Column(
+            horizontal_alignment=ft.CrossAxisAlignment.CENTER,
+            controls=[
+                ft.GestureDetector(
+                    on_tap=shuffle_preview,
+                    on_pan_update=shuffle_preview,
+                    content=mini_grid,
+                ),
+                ft.Button("Resolver Cubo", on_click=enter_rubik_ui),
+            ],
+        ),
+    )
+
 def color_morph_animation(callback):
     def animate_morph(e: ft.Event[ft.Button]):
         is_circle = container.border_radius == CONST_WIDTH / 2
@@ -214,14 +238,6 @@ def flip_switcher_animation(callback):
         content=ft.Column(
             horizontal_alignment=ft.CrossAxisAlignment.CENTER,
             controls=[
-                ft.GestureDetector(
-                    on_tap=shuffle_preview,
-                    on_pan_update=shuffle_preview,
-                    content=mini_grid,
-                ),
-                ft.Button("Resolver Cubo", on_click=enter_rubik_ui),
-            ],
-        ),
                 switcher := ft.AnimatedSwitcher(
                     content=icon_a,
                     transition=ft.AnimatedSwitcherTransition.SCALE,
