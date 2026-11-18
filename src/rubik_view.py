@@ -8,7 +8,6 @@ import numpy as np
 from camera_scanner import (
     DEFAULT_LAB_REFS,
     FACE_COLOR_NAMES,
-    detect_available_cameras,
     open_camera_capture,
     process_camera_frame,
     reclassify_all_faces,
@@ -21,6 +20,7 @@ COLORS = {
     "D": "#FFD600",  # Down - Amarillo
     "L": "#FF6D00",  # Left - Naranja
     "B": "#2962FF",  # Back - Azul
+    "X": "#2E2E38",  # Sin pintar (pegatina vacía)
 }
 
 FACE_NORMALS = {
@@ -150,13 +150,28 @@ def play_victory_sound(enabled: bool = True):
 
 
 class RubikCubeState:
-    """Modelo lógico del Cubo de Rubik 3x3 compatible con Kociemba (URFDLB)."""
+    """
+    Modelo lógico del Cubo de Rubik 3x3 compatible con Kociemba (URFDLB).
+    Los centros (índice 4 de cada cara) son fijos para establecer el sistema
+    de referencia espacial y garantizar 6 colores únicos.
+    """
 
     def __init__(self):
-        self.reset()
+        self.clear_to_centers()
 
     def reset(self):
+        """Restaura el cubo completo resuelto (9/9 en cada color)."""
         self.faces = {face: [face] * 9 for face in ["U", "R", "F", "D", "L", "B"]}
+
+    def clear_to_centers(self):
+        """Deja únicamente los 6 centros fijos (1/9) y el resto sin pintar ('X')."""
+        self.faces = {
+            face: [face if i == 4 else "X" for i in range(9)]
+            for face in ["U", "R", "F", "D", "L", "B"]
+        }
+
+    def has_unpainted_stickers(self) -> bool:
+        return any("X" in stickers for stickers in self.faces.values())
 
     def copy_from(self, other: "RubikCubeState"):
         self.faces = {k: list(v) for k, v in other.faces.items()}
@@ -173,7 +188,22 @@ class RubikCubeState:
         return counts
 
     def is_color_count_valid(self) -> bool:
-        return all(count == 9 for count in self.color_counts().values())
+        return (not self.has_unpainted_stickers()) and all(
+            count == 9 for count in self.color_counts().values()
+        )
+
+    def is_physically_solvable(self) -> bool:
+        """Verifica que el estado tenga exactamente 9/9 por color y paridad/orientación válida."""
+        if not self.is_color_count_valid():
+            return False
+        state_str = self.to_kociemba_string()
+        if state_str == "UUUUUUUUURRRRRRRRRFFFFFFFFFDDDDDDDDDLLLLLLLLLBBBBBBBBB":
+            return True
+        try:
+            kociemba.solve(state_str)
+            return True
+        except Exception:
+            return False
 
     def _rotate_face_cw(self, face: str):
         f = self.faces[face]
@@ -510,7 +540,7 @@ def _resolve_physical_swipe_move(
 
 
 def open_rubik_interface(page: ft.Page):
-    cube = RubikCubeState()
+    cube = RubikCubeState()  # Inicia sin pintar (solo los 6 centros fijos en 1/9)
     selected_brush: list[str | None] = [None]
     solution_steps: list[str] = []
     step_index = [0]
@@ -525,9 +555,7 @@ def open_rubik_interface(page: ft.Page):
 
     cam_state = {
         "active": False,
-        "available_cams": [0],
-        "cam_pos": 0,
-        "cam_idx": 0,
+        "cam_idx": 0,  # Siempre cámara frontal integrada de la computadora
         "scanned_faces": {},
         "capture_history": [],
         "raw_labs": {},
@@ -538,7 +566,6 @@ def open_rubik_interface(page: ft.Page):
         "center_valid": True,
     }
 
-    # Matriz de rotación libre 360° (permite voltear el cubo completamente boca abajo)
     cam_rot = [_make_cam_mat(-0.62, 0.44)]
     drag_state = {
         "start_x": 0.0,
@@ -555,18 +582,36 @@ def open_rubik_interface(page: ft.Page):
     mini_drag = {"start_x": 0.0, "start_y": 0.0}
 
     status_banner = ft.Text(
-        "Elige un color de la paleta para pintar, o usa 'Armar Manualmente' / 'Escanear Cámara'.",
+        "Selecciona un color de la paleta y pinta las pegatinas (máx. 9 por color), o usa 'Escanear Cámara'.",
         size=13,
         color="#80DEEA",
         text_align=ft.TextAlign.CENTER,
+        max_lines=2,
+        overflow=ft.TextOverflow.ELLIPSIS,
+    )
+
+    status_banner_box = ft.Container(
+        height=40,
+        width=640,
+        alignment=ft.Alignment(0, 0),
+        content=status_banner,
     )
 
     step_instruction = ft.Text(
-        "Estado inicial: Cubo resuelto (9/9 en cada color)",
-        size=15,
+        "Modo pintado: rellena las 48 pegatinas (9/9 por color) o pulsa 'Mezclar'",
+        size=14,
         weight=ft.FontWeight.BOLD,
         color="#FFFFFF",
         text_align=ft.TextAlign.CENTER,
+        max_lines=2,
+        overflow=ft.TextOverflow.ELLIPSIS,
+    )
+
+    step_instruction_box = ft.Container(
+        height=42,
+        width=588,
+        alignment=ft.Alignment(0, 0),
+        content=step_instruction,
     )
 
     progress_text = ft.Text("Paso 0 / 0", size=12, color="#9E9E9E")
@@ -640,7 +685,8 @@ def open_rubik_interface(page: ft.Page):
                     proj = [_project_camera_point(cp, cx, cy, scale) for cp in cam_pts]
                     avg_z = sum(p[2] for p in proj) / 4.0
                     poly_2d = [(p[0], p[1]) for p in proj]
-                    shaded_hex = _shade_hex_color(COLORS[cube_faces[face][idx]], cam_norm)
+                    raw_hex = COLORS.get(cube_faces[face][idx], COLORS["X"])
+                    shaded_hex = _shade_hex_color(raw_hex, cam_norm)
                     sticker_list.append((avg_z, face, idx, poly_2d, shaded_hex))
 
         body_list.sort(key=lambda item: item[0])
@@ -706,7 +752,7 @@ def open_rubik_interface(page: ft.Page):
 
         return shapes
 
-    cube_canvas = cv.Canvas(width=380, height=330, shapes=[])
+    cube_canvas = cv.Canvas(width=380, height=320, shapes=[])
     mini_cube_canvas = cv.Canvas(width=215, height=215, shapes=[])
 
     solve_btn = ft.FilledButton(
@@ -720,8 +766,8 @@ def open_rubik_interface(page: ft.Page):
             cube_faces=cube.faces,
             rot_mat=cam_rot[0],
             cx=190.0,
-            cy=165.0,
-            scale=122.0,
+            cy=160.0,
+            scale=120.0,
             turn_base=active_turn["base"],
             turn_angle=active_turn["angle"],
             record_hitboxes=(active_turn["base"] is None),
@@ -804,7 +850,6 @@ def open_rubik_interface(page: ft.Page):
                     trigger_manual_move(move)
             return
 
-        # Rotación 3D libre 360° en pantalla (permite subir el amarillo y bajar el blanco)
         rot_y = _rot_y_mat(dx * 0.013)
         rot_x = _rot_x_mat(dy * 0.013)
         cam_rot[0] = _mat_mul(rot_x, _mat_mul(rot_y, cam_rot[0]))
@@ -819,8 +864,9 @@ def open_rubik_interface(page: ft.Page):
 
         hit = _find_sticker_at(e.local_position.x, e.local_position.y)
         if hit is not None:
-            if selected_brush[0] is None:
-                status_banner.value = "👆 Primero selecciona un color de la paleta inferior para pintar pegatinas."
+            brush_color = selected_brush[0]
+            if brush_color is None:
+                status_banner.value = "👆 Primero selecciona un color de la paleta para pintar pegatinas."
                 status_banner.color = "#FFD54F"
                 page.update()
                 return
@@ -828,28 +874,53 @@ def open_rubik_interface(page: ft.Page):
             face, idx = hit
             if idx == 4:
                 status_banner.value = (
-                    f"El centro de la cara {FACE_NAMES[face]} es fijo y define el color de esa cara."
+                    f"El centro de la cara {FACE_NAMES[face]} es fijo y define el sistema de referencia."
                 )
                 status_banner.color = "#FFD54F"
+                page.update()
+                return
+
+            current_color = cube.faces[face][idx]
+            counts = cube.color_counts()
+
+            # Si vuelve a tocar con el mismo color, la despinta ('X') para corregir fácilmente
+            if current_color == brush_color:
+                cube.faces[face][idx] = "X"
             else:
-                cube.faces[face][idx] = selected_brush[0]
-                solution_steps.clear()
-                step_index[0] = 0
-                update_playback_controls()
-                update_brush_ui()
-                render_3d_cube()
-                if cube.is_color_count_valid():
-                    status_banner.value = "✓ Conteo completo (9/9 en cada color). Ya puedes calcular la solución."
+                if counts[brush_color] >= 9:
+                    status_banner.value = (
+                        f"⚠️ El color {FACE_COLOR_NAMES[brush_color]} ya tiene 9/9 pegatinas. "
+                        f"Despinta o cambia una de sus pegatinas primero."
+                    )
+                    status_banner.color = "#FF5252"
+                    page.update()
+                    return
+                cube.faces[face][idx] = brush_color
+
+            solution_steps.clear()
+            step_index[0] = 0
+            update_playback_controls()
+            is_solvable = update_brush_ui()
+            render_3d_cube()
+
+            if cube.is_color_count_valid():
+                if is_solvable:
+                    status_banner.value = "✅ Conteo 9/9 completo y configuración válida. Ya puedes calcular la solución."
                     status_banner.color = "#00E676"
                 else:
-                    counts = cube.color_counts()
-                    invalid = ", ".join(
-                        f"{FACE_COLOR_NAMES[c]} ({counts[c]}/9)"
-                        for c in ["U", "R", "F", "D", "L", "B"]
-                        if counts[c] != 9
+                    status_banner.value = (
+                        "❌ Conteo 9/9 completo, pero la combinación es físicamente imposible (revisa esquinas/aristas)."
                     )
-                    status_banner.value = f"Pegatina actualizada. Ajusta los conteos para resolver: {invalid}"
-                    status_banner.color = "#80DEEA"
+                    status_banner.color = "#FF5252"
+            else:
+                new_counts = cube.color_counts()
+                pendientes = ", ".join(
+                    f"{FACE_COLOR_NAMES[c]} ({new_counts[c]}/9)"
+                    for c in ["U", "R", "F", "D", "L", "B"]
+                    if new_counts[c] < 9
+                )
+                status_banner.value = f"Pegatina actualizada • Faltan: {pendientes}"
+                status_banner.color = "#80DEEA"
             page.update()
 
     interactive_cube = ft.GestureDetector(
@@ -872,39 +943,53 @@ def open_rubik_interface(page: ft.Page):
 
     def select_brush(color_code: str):
         selected_brush[0] = color_code
+        counts = cube.color_counts()
         update_brush_ui()
-        status_banner.value = (
-            f"Pincel activo: {FACE_NAMES[color_code]} — Haz clic en una pegatina lateral o esquina para pintarla."
-        )
-        status_banner.color = "#80DEEA"
+        if counts[color_code] >= 9:
+            status_banner.value = (
+                f"Pincel: {FACE_NAMES[color_code]} (9/9 lleno). Toca una pegatina de este color para despintarla."
+            )
+            status_banner.color = "#FFD54F"
+        else:
+            status_banner.value = (
+                f"Pincel activo: {FACE_NAMES[color_code]} ({counts[color_code]}/9) — Toca una esquina o arista."
+            )
+            status_banner.color = "#80DEEA"
         page.update()
 
-    def update_brush_ui():
+    def update_brush_ui() -> bool:
         counts = cube.color_counts()
-        all_valid = True
+        all_counts_9 = True
         for code, btn in brush_buttons.items():
             is_sel = selected_brush[0] is not None and code == selected_brush[0]
-            btn.border = ft.Border.all(3 if is_sel else 1, "#00E5FF" if is_sel else "#616161")
-            btn.scale = 1.08 if is_sel else 1.0
-
             cnt = counts[code]
+            btn.border = ft.Border.all(
+                3 if is_sel else 1,
+                "#00E5FF" if is_sel else ("#00E676" if cnt == 9 else "#616161"),
+            )
+            btn.scale = 1.08 if is_sel else 1.0
+            btn.opacity = 0.72 if (cnt >= 9 and not is_sel) else 1.0
+
             lbl = brush_count_labels[code]
             lbl.value = f"{cnt}/9"
             if cnt == 9:
                 lbl.color = "#00E676"
             else:
-                all_valid = False
+                all_counts_9 = False
                 lbl.color = "#FF5252" if cnt > 9 else "#FFD54F"
 
-        solve_btn.disabled = (not all_valid) or cam_state["active"]
-        solve_btn.tooltip = (
-            "Calcular pasos para resolver el cubo"
-            if all_valid
-            else "Cada uno de los 6 colores debe tener exactamente 9 pegatinas (9/9)"
-        )
+        solvable = all_counts_9 and cube.is_physically_solvable()
+        solve_btn.disabled = (not solvable) or cam_state["active"]
+        if not all_counts_9:
+            solve_btn.tooltip = "Cada uno de los 6 colores debe tener exactamente 9 pegatinas (9/9)"
+        elif not solvable:
+            solve_btn.tooltip = "Configuración físicamente imposible (revisa orientación de esquinas o aristas)"
+        else:
+            solve_btn.tooltip = "Calcular pasos para resolver el cubo"
+        return solvable
 
     for code in ["U", "R", "F", "D", "L", "B"]:
-        count_txt = ft.Text("9/9", size=10, weight=ft.FontWeight.BOLD, color="#00E676")
+        count_txt = ft.Text("1/9", size=10, weight=ft.FontWeight.BOLD, color="#FFD54F")
         brush_count_labels[code] = count_txt
         swatch = ft.Container(
             width=32,
@@ -935,7 +1020,7 @@ def open_rubik_interface(page: ft.Page):
         spacing=4,
         controls=[
             ft.Text(
-                "Pincel de pegatinas (los centros con punto son fijos):",
+                "Pincel de pegatinas (máx. 9 por color; los centros con punto son fijos):",
                 size=12,
                 color="#B3FFFFFF",
             ),
@@ -1134,22 +1219,23 @@ def open_rubik_interface(page: ft.Page):
             update_playback_controls()
         page.update()
 
-    def on_reset(e):
+    def on_clear_cube(e):
+        """Limpia el cubo dejando únicamente los 6 centros fijos (1/9) para volver a pintar."""
         if is_turning[0] or cam_state["active"]:
             return
         is_animating[0] = False
-        cube.reset()
+        cube.clear_to_centers()
         solution_steps.clear()
         step_index[0] = 0
         selected_brush[0] = None
         hide_palette_after_scan[0] = False
         cam_rot[0] = _make_cam_mat(-0.62, 0.44)
         brush_section.visible = not manual_solve_mode[0]
-        reset_btn.visible = True
+        clear_btn.visible = not manual_solve_mode[0]
         scramble_btn.visible = True
         back_to_main_btn.visible = False
-        step_instruction.value = "Estado inicial: Cubo resuelto (9/9 en cada color)"
-        status_banner.value = "Cubo reiniciado."
+        step_instruction.value = "Modo pintado: rellena las 48 pegatinas (9/9 por color) o pulsa 'Mezclar'"
+        status_banner.value = "🧹 Cubo limpio con centros fijos (1/9). Selecciona un color para pintar."
         status_banner.color = "#80DEEA"
         update_playback_controls()
         update_brush_ui()
@@ -1159,6 +1245,11 @@ def open_rubik_interface(page: ft.Page):
     async def scramble_task():
         if is_animating[0] or is_turning[0] or cam_state["active"]:
             return
+        if cube.has_unpainted_stickers():
+            cube.reset()
+            render_3d_cube()
+            cube_canvas.update()
+
         solution_steps.clear()
         step_index[0] = 0
         update_playback_controls()
@@ -1226,7 +1317,6 @@ def open_rubik_interface(page: ft.Page):
         style=ft.ButtonStyle(bgcolor="#00C853", color="#000000"),
     )
     cam_prev_btn = ft.OutlinedButton("Anterior", icon=ft.Icons.SKIP_PREVIOUS)
-    cam_cancel_btn = ft.OutlinedButton("Volver", icon=ft.Icons.ARROW_BACK)
 
     camera_panel = ft.Column(
         visible=False,
@@ -1247,7 +1337,7 @@ def open_rubik_interface(page: ft.Page):
                             horizontal_alignment=ft.CrossAxisAlignment.CENTER,
                             spacing=6,
                             controls=[
-                                ft.Text("Cámara en vivo", size=12, weight=ft.FontWeight.BOLD, color="#00E5FF"),
+                                ft.Text("Cámara frontal", size=12, weight=ft.FontWeight.BOLD, color="#00E5FF"),
                                 ft.Container(
                                     content=camera_preview,
                                     border=ft.Border.all(2, "#00E5FF"),
@@ -1271,8 +1361,8 @@ def open_rubik_interface(page: ft.Page):
             ),
             ft.Row(
                 alignment=ft.MainAxisAlignment.CENTER,
-                spacing=10,
-                controls=[cam_capture_btn, cam_prev_btn, cam_cancel_btn],
+                spacing=12,
+                controls=[cam_capture_btn, cam_prev_btn],
             ),
         ],
     )
@@ -1331,6 +1421,16 @@ def open_rubik_interface(page: ft.Page):
         ],
     )
 
+    mode_controls_slot = ft.Container(
+        height=64,
+        alignment=ft.Alignment(0, 0),
+        content=ft.Column(
+            alignment=ft.MainAxisAlignment.CENTER,
+            horizontal_alignment=ft.CrossAxisAlignment.CENTER,
+            controls=[brush_section, manual_play_section],
+        ),
+    )
+
     manual_mode_btn = ft.FilledTonalButton(
         "Armar Manualmente",
         icon=ft.Icons.SPORTS_ESPORTS,
@@ -1341,11 +1441,13 @@ def open_rubik_interface(page: ft.Page):
         padding=ft.Padding.symmetric(horizontal=16, vertical=8),
         border_radius=12,
         width=620,
+        height=98,
         content=ft.Column(
+            alignment=ft.MainAxisAlignment.CENTER,
             horizontal_alignment=ft.CrossAxisAlignment.CENTER,
             spacing=6,
             controls=[
-                step_instruction,
+                step_instruction_box,
                 ft.Row(
                     alignment=ft.MainAxisAlignment.CENTER,
                     spacing=10,
@@ -1355,9 +1457,21 @@ def open_rubik_interface(page: ft.Page):
         ),
     )
 
-    reset_btn = ft.OutlinedButton("Reiniciar", icon=ft.Icons.REFRESH, on_click=on_reset)
-    scramble_btn = ft.OutlinedButton("Mezclar", icon=ft.Icons.SHUFFLE, on_click=on_scramble_click)
-    scan_cam_btn = ft.FilledTonalButton("Escanear Cámara", icon=ft.Icons.CAMERA_ALT)
+    clear_btn = ft.OutlinedButton(
+        "Limpiar",
+        icon=ft.Icons.FORMAT_COLOR_RESET,
+        tooltip="Deja solo los 6 centros fijos para volver a pintar",
+        on_click=on_clear_cube,
+    )
+    scramble_btn = ft.OutlinedButton(
+        "Mezclar",
+        icon=ft.Icons.SHUFFLE,
+        on_click=on_scramble_click,
+    )
+    scan_cam_btn = ft.FilledTonalButton(
+        "Escanear Cámara",
+        icon=ft.Icons.CAMERA_ALT,
+    )
 
     back_to_main_btn = ft.OutlinedButton(
         "Principal",
@@ -1381,7 +1495,7 @@ def open_rubik_interface(page: ft.Page):
         manual_play_section.visible = False
         playback_box.visible = True
         action_bar.visible = True
-        reset_btn.visible = True
+        clear_btn.visible = True
         scramble_btn.visible = True
         scan_cam_btn.visible = True
         solve_btn.visible = True
@@ -1389,7 +1503,7 @@ def open_rubik_interface(page: ft.Page):
         manual_mode_btn.text = "Armar Manualmente"
         manual_mode_btn.icon = ft.Icons.SPORTS_ESPORTS
 
-        status_banner.value = "Elige un color de la paleta para pintar, o usa 'Armar Manualmente' / 'Escanear Cámara'."
+        status_banner.value = "Selecciona un color de la paleta y pinta las pegatinas, o usa 'Escanear Cámara'."
         status_banner.color = "#80DEEA"
         update_playback_controls()
         update_brush_ui()
@@ -1399,13 +1513,21 @@ def open_rubik_interface(page: ft.Page):
     back_to_main_btn.on_click = go_to_main_screen
 
     def set_manual_solve_mode(enabled: bool):
+        if is_turning[0] or cam_state["active"]:
+            return
+        is_animating[0] = False
+
+        if enabled and cube.has_unpainted_stickers():
+            cube.reset()
+            render_3d_cube()
+
         manual_solve_mode[0] = enabled
         brush_section.visible = (not enabled) and (not hide_palette_after_scan[0])
         manual_play_section.visible = enabled
         playback_box.visible = not enabled
         scan_cam_btn.visible = not enabled
         solve_btn.visible = not enabled
-        reset_btn.visible = not hide_palette_after_scan[0]
+        clear_btn.visible = (not enabled) and (not hide_palette_after_scan[0])
         scramble_btn.visible = not hide_palette_after_scan[0]
 
         if enabled:
@@ -1419,8 +1541,9 @@ def open_rubik_interface(page: ft.Page):
             if hide_palette_after_scan[0]:
                 status_banner.value = "Cubo escaneado listo — Presiona 'Calcular Solución' o 'Armar Manualmente'."
             else:
-                status_banner.value = "Elige un color de la paleta para pintar, o usa 'Armar Manualmente'."
+                status_banner.value = "Selecciona un color de la paleta y pinta las pegatinas, o usa 'Mezclar'."
             status_banner.color = "#80DEEA"
+            update_playback_controls()
             update_brush_ui()
         page.update()
 
@@ -1431,8 +1554,7 @@ def open_rubik_interface(page: ft.Page):
         spacing=6,
         controls=[
             interactive_cube,
-            brush_section,
-            manual_play_section,
+            mode_controls_slot,
             playback_box,
         ],
     )
@@ -1457,7 +1579,7 @@ def open_rubik_interface(page: ft.Page):
             brush_section.visible = False
             manual_play_section.visible = False
             playback_box.visible = True
-            reset_btn.visible = False
+            clear_btn.visible = False
             scramble_btn.visible = False
             scan_cam_btn.visible = True
             solve_btn.visible = True
@@ -1465,12 +1587,17 @@ def open_rubik_interface(page: ft.Page):
             manual_mode_btn.text = "Armar Manualmente"
             manual_mode_btn.icon = ft.Icons.SPORTS_ESPORTS
             update_playback_controls()
-            update_brush_ui()
+            is_solvable = update_brush_ui()
             render_3d_cube()
 
-            if cube.is_color_count_valid():
-                status_banner.value = "✅ ¡6 caras escaneadas! Presiona 'Calcular Solución' o 'Armar Manualmente'."
+            if cube.is_color_count_valid() and is_solvable:
+                status_banner.value = "✅ ¡6 caras escaneadas y válidas! Presiona 'Calcular Solución' o 'Armar Manualmente'."
                 status_banner.color = "#00E676"
+            elif cube.is_color_count_valid():
+                status_banner.value = (
+                    "⚠️ 6 caras escaneadas (9/9), pero la combinación resultó físicamente imposible. Pulsa 'Principal' para corregir."
+                )
+                status_banner.color = "#FF5252"
             else:
                 counts = cube.color_counts()
                 invalid = ", ".join(
@@ -1484,7 +1611,7 @@ def open_rubik_interface(page: ft.Page):
             brush_section.visible = (not manual_solve_mode[0]) and (not hide_palette_after_scan[0])
             manual_play_section.visible = manual_solve_mode[0]
             playback_box.visible = not manual_solve_mode[0]
-            reset_btn.visible = not hide_palette_after_scan[0]
+            clear_btn.visible = (not manual_solve_mode[0]) and (not hide_palette_after_scan[0])
             scramble_btn.visible = not hide_palette_after_scan[0]
             scan_cam_btn.visible = not manual_solve_mode[0]
             solve_btn.visible = not manual_solve_mode[0]
@@ -1546,7 +1673,6 @@ def open_rubik_interface(page: ft.Page):
 
     cam_capture_btn.on_click = capture_current_face
     cam_prev_btn.on_click = prev_camera_face
-    cam_cancel_btn.on_click = lambda e: exit_camera_mode(completed=False)
 
     def on_key_event(e: ft.KeyboardEvent):
         if not is_open[0]:
@@ -1555,7 +1681,7 @@ def open_rubik_interface(page: ft.Page):
             if e.key == " ":
                 capture_current_face()
             elif e.key == "Escape":
-                exit_camera_mode(completed=False)
+                go_to_main_screen()
             return
 
         key_upper = (e.key or "").upper()
@@ -1568,16 +1694,10 @@ def open_rubik_interface(page: ft.Page):
     page.on_keyboard_event = on_key_event
 
     async def camera_stream_loop():
-        active_idx = cam_state["cam_idx"]
-        cap = await asyncio.to_thread(open_camera_capture, active_idx)
+        cap = await asyncio.to_thread(open_camera_capture, cam_state["cam_idx"])
         last_banner_text = ""
 
         while cam_state["active"] and is_open[0]:
-            if cam_state["cam_idx"] != active_idx:
-                await asyncio.to_thread(cap.release)
-                active_idx = cam_state["cam_idx"]
-                cap = await asyncio.to_thread(open_camera_capture, active_idx)
-
             ret, frame = await asyncio.to_thread(cap.read)
             if ret and frame is not None and len(cam_state["scanned_faces"]) < 6:
                 b64_img, detected_9, patches_lab, detected_center, is_new_face = await asyncio.to_thread(
@@ -1643,14 +1763,7 @@ def open_rubik_interface(page: ft.Page):
 
     async def start_camera_mode():
         is_animating[0] = False
-        status_banner.value = "📷 Detectando cámaras disponibles..."
-        status_banner.color = "#80DEEA"
-        page.update()
-
-        available_cams = await asyncio.to_thread(detect_available_cameras)
-        cam_state["available_cams"] = available_cams
-        cam_state["cam_pos"] = 0
-        cam_state["cam_idx"] = available_cams[0]
+        cam_state["cam_idx"] = 0
         cam_state["scanned_faces"] = {}
         cam_state["capture_history"] = []
         cam_state["raw_labs"] = {}
@@ -1673,6 +1786,7 @@ def open_rubik_interface(page: ft.Page):
         update_playback_controls()
 
         status_banner.value = "📷 (0/6) Muestra cualquier cara del cubo frente a la cámara (Blanco arriba)"
+        status_banner.color = "#80DEEA"
         page.update()
 
         page.run_task(camera_stream_loop)
@@ -1683,17 +1797,27 @@ def open_rubik_interface(page: ft.Page):
 
     scan_cam_btn.on_click = on_camera_scan_click
 
-    action_bar = ft.Row(
-        alignment=ft.MainAxisAlignment.CENTER,
-        spacing=8,
-        wrap=True,
-        controls=[
-            reset_btn,
-            scramble_btn,
-            manual_mode_btn,
-            scan_cam_btn,
-            solve_btn,
-        ],
+    action_bar = ft.Container(
+        height=88,
+        alignment=ft.Alignment(0, 0),
+        content=ft.Column(
+            alignment=ft.MainAxisAlignment.CENTER,
+            horizontal_alignment=ft.CrossAxisAlignment.CENTER,
+            spacing=8,
+            controls=[
+                ft.Row(
+                    alignment=ft.MainAxisAlignment.CENTER,
+                    spacing=8,
+                    controls=[
+                        clear_btn,
+                        scramble_btn,
+                        manual_mode_btn,
+                        scan_cam_btn,
+                    ],
+                ),
+                solve_btn,
+            ],
+        ),
     )
 
     def close_modal(e=None):
@@ -1724,7 +1848,7 @@ def open_rubik_interface(page: ft.Page):
 
     dialog_card = ft.Container(
         width=680,
-        height=725,
+        height=765,
         bgcolor="#1A1A22",
         border_radius=18,
         padding=18,
@@ -1761,7 +1885,7 @@ def open_rubik_interface(page: ft.Page):
                         ),
                     ],
                 ),
-                status_banner,
+                status_banner_box,
                 cube_view_panel,
                 camera_panel,
                 action_bar,
