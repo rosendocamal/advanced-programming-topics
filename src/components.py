@@ -1,5 +1,7 @@
+from rubik_view import open_rubik_interface
+import random
 import flet as ft
-import inspect
+import inspect, random
 
 CONST_WIDTH = 150
 CONST_HEIGHT = 150
@@ -7,6 +9,7 @@ CONST_HEIGHT = 150
 def opacity_animation(callback):
     def animate_opacity(e: ft.Event[ft.Button]):
         container.opacity = 0 if container.opacity == 1 else 1
+        container.bgcolor = ft.Colors.WHITE_54 if random.randint(0, 1) else ft.Colors.BLACK_54
         container.update()
         callback(inspect.getsource(opacity_animation))
 
@@ -86,6 +89,65 @@ def scale_animation(callback):
             ),
         )
 
+def rubik_cube_component(callback):
+    palette = [
+        ft.Colors.RED_500,
+        ft.Colors.GREEN_500,
+        ft.Colors.BLUE_500,
+        ft.Colors.YELLOW_400,
+        ft.Colors.ORANGE_500,
+        ft.Colors.WHITE,
+    ]
+
+    mini_grid = ft.GridView(
+        runs_count=3,
+        width=CONST_WIDTH,
+        height=CONST_HEIGHT,
+        spacing=3,
+        run_spacing=3,
+        controls=[
+            ft.Container(
+                bgcolor=random.choice(palette),
+                border_radius=4,
+                animate=ft.Animation(400, ft.AnimationCurve.EASE_IN_OUT),
+            )
+            for _ in range(9)
+        ],
+    )
+
+    def shuffle_preview(e):
+        for cell in mini_grid.controls:
+            cell.bgcolor = random.choice(palette)
+        mini_grid.update()
+        callback(inspect.getsource(rubik_cube_component))
+
+    def enter_rubik_ui(e: ft.Event[ft.Button]):
+        callback(inspect.getsource(rubik_cube_component))
+        open_rubik_interface(e.page)
+
+    def shuffle_preview(e):
+        for cell in mini_grid.controls:
+            cell.bgcolor = random.choice(palette)
+        mini_grid.update()
+        callback(inspect.getsource(rubik_cube_component))
+
+    def enter_rubik_ui(e: ft.Event[ft.Button]):
+        callback(inspect.getsource(rubik_cube_component))
+        open_rubik_interface(e.page)
+
+    return ft.SafeArea(
+        content=ft.Column(
+            horizontal_alignment=ft.CrossAxisAlignment.CENTER,
+            controls=[
+                ft.GestureDetector(
+                    on_tap=shuffle_preview,
+                    on_pan_update=shuffle_preview,
+                    content=mini_grid,
+                ),
+                ft.Button("Resolver Cubo", on_click=enter_rubik_ui),
+            ],
+        ),
+    )
 
 def color_morph_animation(callback):
     def animate_morph(e: ft.Event[ft.Button]):
@@ -188,6 +250,7 @@ def flip_switcher_animation(callback):
         ),
     )
 
+  
 def heart_animation(callback):
     def animate_heart(e: ft.Event[ft.Button]):
         is_broken = container.border_radius == 75
@@ -224,10 +287,9 @@ def phone_animation(callback):
         container.scale = 1.3 if container.scale == 1.0 else 1.0
         container.update()
         callback(inspect.getsource(phone_animation))
-
+        
     return ft.SafeArea(
         content=ft.Column(
-            horizontal_alignment=ft.CrossAxisAlignment.CENTER,
             controls=[
                 container := ft.Container(
                     width=CONST_WIDTH,
@@ -279,11 +341,10 @@ def ball_animation(callback):
             time.sleep(0.12)
 
         callback(inspect.getsource(ball_animation))
-
+     
     return ft.SafeArea(
         content=ft.Column(
-            horizontal_alignment=ft.CrossAxisAlignment.CENTER,
-            controls=[
+                controls=[
                 container := ft.Container(
                     width=CONST_WIDTH,
                     height=CONST_HEIGHT,
@@ -299,5 +360,332 @@ def ball_animation(callback):
                 ),
                 ft.Button("¡Bótame!", on_click=animate_ball),
             ],
+        )
+
+def sunflower_animation(callback):
+    import logging
+    import math
+    import random
+    from dataclasses import dataclass
+
+    logging.basicConfig(level=logging.INFO)
+    logging.getLogger("flet_components").setLevel(logging.INFO)
+
+    MAX_SEEDS = 250
+    DIALOG_WIDTH = 760
+    DIALOG_HEIGHT = 620
+    rng = random.Random()
+
+    @dataclass
+    class Seed:
+        x: float
+        y: float
+        inner: bool = False
+
+    def compute_seeds(count: int) -> list[Seed]:
+        seeds = []
+        tau = math.tau
+        phi = (math.sqrt(5) + 1) / 2
+
+        for i in range(count):
+            theta = i * tau / phi
+            radius = math.sqrt(i) / 40
+            seeds.append(
+                Seed(
+                    x=radius * math.cos(theta),
+                    y=-radius * math.sin(theta),
+                    inner=True,
+                )
+            )
+
+        for i in range(count, MAX_SEEDS):
+            angle = tau * i / (MAX_SEEDS - 1)
+            seeds.append(
+                Seed(
+                    x=math.cos(angle) * 0.9,
+                    y=math.sin(angle) * 0.9,
+                )
+            )
+
+        return seeds
+
+    def make_seed_controls(
+        seeds: list[Seed], animated: bool = True
+    ) -> list[ft.Control]:
+        return [
+            ft.Container(
+                width=5,
+                height=5,
+                bgcolor=ft.Colors.ORANGE if seed.inner else ft.Colors.GREY_700,
+                align=ft.Alignment(seed.x, seed.y),
+                animate_align=(
+                    ft.Animation(round(rng.random() * 500) + 250)
+                    if animated
+                    else None
+                ),
+                border_radius=2.5,
+            )
+            for seed in seeds
+        ]
+
+    def open_sunflower(event: ft.Event[ft.Button]):
+        page = event.control.page
+        initial_count = MAX_SEEDS // 2
+        seed_stack = ft.Stack(
+            controls=make_seed_controls(compute_seeds(initial_count)),
+            aspect_ratio=1.0,
+        )
+        seed_count_text = ft.Text(
+            f"Showing {initial_count} seeds",
+            text_align=ft.TextAlign.CENTER,
+        )
+
+        def update_seed_count(e: ft.Event[ft.Slider]):
+            count = round(e.control.value)
+            seed_stack.controls = make_seed_controls(compute_seeds(count))
+            seed_count_text.value = (
+                f"Showing {count} seed{'s' if count != 1 else ''}"
+            )
+            seed_stack.update()
+            seed_count_text.update()
+
+        def close_sunflower(e: ft.Event[ft.Button]):
+            page.pop_dialog()
+            callback(inspect.getsource(sunflower_animation))
+
+        close_button = ft.IconButton(
+            icon=ft.Icons.CLOSE,
+            tooltip="Cerrar girasol",
+            on_click=close_sunflower,
+        )
+        slider = ft.Slider(
+            min=1,
+            max=MAX_SEEDS,
+            value=initial_count,
+            width=300,
+            on_change=update_seed_count,
+        )
+        page.show_dialog(
+            ft.AlertDialog(
+                modal=True,
+                alignment=ft.Alignment.CENTER,
+                content_padding=0,
+                content=ft.Container(
+                    width=DIALOG_WIDTH,
+                    height=DIALOG_HEIGHT,
+                    padding=20,
+                    content=ft.Column(
+                        horizontal_alignment=ft.CrossAxisAlignment.CENTER,
+                        expand=True,
+                        controls=[
+                            ft.Row(
+                                controls=[
+                                    ft.Text("Sunflower", size=20, expand=True),
+                                    close_button,
+                                ],
+                                vertical_alignment=ft.CrossAxisAlignment.CENTER,
+                            ),
+                            ft.Container(
+                                content=seed_stack,
+                                alignment=ft.Alignment.CENTER,
+                                expand=True,
+                            ),
+                            ft.Row(
+                                controls=[seed_count_text],
+                                alignment=ft.MainAxisAlignment.CENTER,
+                            ),
+                            ft.Row(
+                                controls=[slider],
+                                alignment=ft.MainAxisAlignment.CENTER,
+                            ),
+                        ],
+                    ),
+                ),
+            ),
+        )
+        callback(inspect.getsource(sunflower_animation))
+
+    flower_preview = ft.Stack(
+        width=CONST_WIDTH,
+        height=CONST_HEIGHT,
+        controls=make_seed_controls(
+            compute_seeds(MAX_SEEDS // 2),
+            animated=True,
+        ),
+    )
+    button = ft.Button(
+        content="¡Florece!",
+        on_click=open_sunflower,
+        align=ft.Alignment.CENTER,
+    )
+    
+    return ft.SafeArea(
+        content=ft.Column(
+            horizontal_alignment=ft.CrossAxisAlignment.CENTER,
+            controls=[flower_preview, button],
+        ),
+    )
+
+
+def timer_animation(callback):
+    DIALOG_WIDTH = 760
+    DIALOG_HEIGHT = 620
+
+    def open_timer(event: ft.Event[ft.Button]):
+        import asyncio
+        import time
+        page = event.control.page
+        state = {
+            "elapsed": 0,
+            "started_at": 0.0,
+            "running": False,
+            "closed": False,
+            "task": None,
+        }
+
+        def format_hhmmss(seconds: int) -> str:
+            hours, remainder = divmod(seconds, 3600)
+            minutes, seconds = divmod(remainder, 60)
+            return f"{hours:02}:{minutes:02}:{seconds:02}"
+
+        def elapsed_seconds() -> int:
+            if state["running"]:
+                return state["elapsed"] + int(
+                    time.monotonic() - state["started_at"]
+                )
+            return state["elapsed"]
+
+        timer_text = ft.Text(
+            "00:00:00",
+            size=30,
+            weight=ft.FontWeight.BOLD,
+        )
+        start_button = ft.FilledButton(
+            "Iniciar",
+            icon=ft.Icons.PLAY_ARROW,
+        )
+        stop_button = ft.TextButton(
+            "Detener",
+            icon=ft.Icons.STOP,
+            disabled=True,
+        )
+
+        def refresh():
+            timer_text.value = format_hhmmss(elapsed_seconds())
+            start_button.content = "Pausar" if state["running"] else "Iniciar"
+            start_button.icon = (
+                ft.Icons.PAUSE if state["running"] else ft.Icons.PLAY_ARROW
+            )
+            stop_button.disabled = (
+                not state["running"] and state["elapsed"] == 0
+            )
+            timer_text.update()
+            start_button.update()
+            stop_button.update()
+
+        async def tick():
+            while not state["closed"]:
+                if state["running"]:
+                    timer_text.value = format_hhmmss(elapsed_seconds())
+                    timer_text.update()
+                await asyncio.sleep(1)
+
+        def toggle_timer(_event: ft.Event[ft.FilledButton]):
+            if state["running"]:
+                state["elapsed"] = elapsed_seconds()
+                state["running"] = False
+            else:
+                state["started_at"] = time.monotonic()
+                state["running"] = True
+                task = state["task"]
+                if task is None or task.done():
+                    state["task"] = page.run_task(tick)
+            refresh()
+
+        def stop_timer(_event: ft.Event[ft.TextButton]):
+            state["running"] = False
+            state["elapsed"] = 0
+            refresh()
+
+        start_button.on_click = toggle_timer
+        stop_button.on_click = stop_timer
+
+        def close_timer(_event: ft.Event[ft.IconButton]):
+            state["closed"] = True
+            task = state["task"]
+            if task is not None:
+                task.cancel()
+            page.pop_dialog()
+            callback(inspect.getsource(timer_animation))
+
+        close_button = ft.IconButton(
+            icon=ft.Icons.CLOSE,
+            tooltip="Cerrar temporizador",
+            on_click=close_timer,
+        )
+
+        page.show_dialog(
+            ft.AlertDialog(
+                modal=True,
+                alignment=ft.Alignment.CENTER,
+                content_padding=0,
+                content=ft.Container(
+                    width=DIALOG_WIDTH,
+                    height=DIALOG_HEIGHT,
+                    padding=20,
+                    content=ft.Column(
+                        horizontal_alignment=ft.CrossAxisAlignment.CENTER,
+                        expand=True,
+                        controls=[
+                            ft.Row(
+                                controls=[
+                                    ft.Text("Timer", size=20, expand=True),
+                                    close_button,
+                                ],
+                                vertical_alignment=ft.CrossAxisAlignment.CENTER,
+                            ),
+                            ft.Container(
+                                content=ft.Column(
+                                    spacing=20,
+                                    horizontal_alignment=ft.CrossAxisAlignment.CENTER,
+                                    alignment=ft.MainAxisAlignment.CENTER,
+                                    controls=[
+                                        timer_text,
+                                        ft.Row(
+                                            alignment=ft.MainAxisAlignment.CENTER,
+                                            controls=[start_button, stop_button],
+                                        ),
+                                    ],
+                                ),
+                                alignment=ft.Alignment.CENTER,
+                                expand=True,
+                            ),
+                        ],
+                    ),
+                ),
+            ),
+        )
+        callback(inspect.getsource(timer_animation))
+
+    container = ft.Container(
+        width=CONST_WIDTH,
+        height=CONST_HEIGHT,
+        content=ft.Icon(
+            ft.Icons.TIMER,
+            size=90,
+            color=ft.Colors.WHITE_54,
+        ),
+        alignment=ft.Alignment.CENTER,
+    )
+    button = ft.Button(
+        content="¡Apúrate!",
+        on_click=open_timer,
+        align=ft.Alignment.CENTER,
+    )
+    
+    return ft.SafeArea(
+        content=ft.Column(
+            horizontal_alignment=ft.CrossAxisAlignment.CENTER,
+            controls=[container, button],
         ),
     )
