@@ -1,10 +1,12 @@
-from rubik_view import open_rubik_interface
-import random
 import flet as ft
-import inspect, random
+import inspect, math, random, time, logging, asyncio
+from dataclasses import dataclass
+from rubik_view import open_rubik_interface
+from main import SCREEN_WIDTH
 
-CONST_WIDTH = 150
-CONST_HEIGHT = 150
+
+COMPONENT_SIZE = int(SCREEN_WIDTH / 12.8)
+DEFAULT_ANIMATION_DURATION_MS = 600
 
 def opacity_animation(callback):
     def animate_opacity(e: ft.Event[ft.Button]):
@@ -17,14 +19,16 @@ def opacity_animation(callback):
             content=ft.Column(
                 controls=[
                     container := ft.Container(
-                        width=CONST_WIDTH,
-                        height=CONST_HEIGHT,
+                        width=COMPONENT_SIZE,
+                        height=COMPONENT_SIZE,
                         bgcolor=ft.Colors.WHITE_54,
                         border_radius=10,
-                        animate_opacity=600,
+                        animate_opacity=DEFAULT_ANIMATION_DURATION_MS,
                         align=ft.Alignment.CENTER
                     ),
                     ft.Button(
+                        color=ft.Colors.WHITE,
+                        bgcolor=ft.Colors.PINK_ACCENT_400,
                         content="¡Tocáme!",
                         on_click=animate_opacity,
                         align=ft.Alignment.CENTER
@@ -34,10 +38,8 @@ def opacity_animation(callback):
         )
 
 def rotation_animation(callback):
-    from math import pi
-
     def animate_rotation(e: ft.Event[ft.Button]):
-        container.rotate.angle += pi / 2
+        container.rotate.angle += math.pi / 2
         container.update()
         callback(inspect.getsource(rotation_animation))
 
@@ -46,24 +48,30 @@ def rotation_animation(callback):
                 horizontal_alignment=ft.CrossAxisAlignment.CENTER,
                 controls=[
                     container := ft.Container(
-                        width=CONST_WIDTH,
-                        height=CONST_HEIGHT,
+                        width=COMPONENT_SIZE,
+                        height=COMPONENT_SIZE,
                         bgcolor=ft.Colors.WHITE_54,
                         border_radius=5,
-                        rotate=ft.Rotate(angle=0, alignment=ft.Alignment.CENTER),
+                        rotate=ft.Rotate(
+                            angle=0, 
+                            alignment=ft.Alignment.CENTER
+                        ),
                         animate_rotation=ft.Animation(
-                            duration=600,
+                            duration=DEFAULT_ANIMATION_DURATION_MS,
                             curve=ft.AnimationCurve.DECELERATE,
                         ),
                     ),
-                    ft.Button("¡Presióname!", on_click=animate_rotation),
+                    ft.Button(
+                        color=ft.Colors.WHITE,
+                        bgcolor=ft.Colors.PINK_ACCENT_400,
+                        content="¡Presióname!",
+                        on_click=animate_rotation
+                    ),
                 ],
             ),
         )
 
 def scale_animation(callback):
-    from math import pi
-
     def animate_rotation(e: ft.Event[ft.Button]):
         container.scale = 1 if container.scale == 0.5 else 0.5
         container.update()
@@ -74,85 +82,29 @@ def scale_animation(callback):
                 horizontal_alignment=ft.CrossAxisAlignment.CENTER,
                 controls=[
                     container := ft.Container(
-                        width=CONST_WIDTH,
-                        height=CONST_HEIGHT,
+                        width=COMPONENT_SIZE,
+                        height=COMPONENT_SIZE,
                         bgcolor=ft.Colors.WHITE_54,
                         border_radius=5,
                         scale=1,
                         animate_scale=ft.Animation(
-                            duration=600,
+                            duration=DEFAULT_ANIMATION_DURATION_MS,
                             curve=ft.AnimationCurve.BOUNCE_OUT,
                         ),
                     ),
-                    ft.Button("¡Hazme tuyo!", on_click=animate_rotation),
+                    ft.Button(
+                        bgcolor=ft.Colors.PINK_ACCENT_400,
+                        content="¡Hazme tuyo!", 
+                        on_click=animate_rotation
+                    ),
                 ],
             ),
         )
 
-def rubik_cube_component(callback):
-    palette = [
-        ft.Colors.RED_500,
-        ft.Colors.GREEN_500,
-        ft.Colors.BLUE_500,
-        ft.Colors.YELLOW_400,
-        ft.Colors.ORANGE_500,
-        ft.Colors.WHITE,
-    ]
-
-    mini_grid = ft.GridView(
-        runs_count=3,
-        width=CONST_WIDTH,
-        height=CONST_HEIGHT,
-        spacing=3,
-        run_spacing=3,
-        controls=[
-            ft.Container(
-                bgcolor=random.choice(palette),
-                border_radius=4,
-                animate=ft.Animation(400, ft.AnimationCurve.EASE_IN_OUT),
-            )
-            for _ in range(9)
-        ],
-    )
-
-    def shuffle_preview(e):
-        for cell in mini_grid.controls:
-            cell.bgcolor = random.choice(palette)
-        mini_grid.update()
-        callback(inspect.getsource(rubik_cube_component))
-
-    def enter_rubik_ui(e: ft.Event[ft.Button]):
-        callback(inspect.getsource(rubik_cube_component))
-        open_rubik_interface(e.page)
-
-    def shuffle_preview(e):
-        for cell in mini_grid.controls:
-            cell.bgcolor = random.choice(palette)
-        mini_grid.update()
-        callback(inspect.getsource(rubik_cube_component))
-
-    def enter_rubik_ui(e: ft.Event[ft.Button]):
-        callback(inspect.getsource(rubik_cube_component))
-        open_rubik_interface(e.page)
-
-    return ft.SafeArea(
-        content=ft.Column(
-            horizontal_alignment=ft.CrossAxisAlignment.CENTER,
-            controls=[
-                ft.GestureDetector(
-                    on_tap=shuffle_preview,
-                    on_pan_update=shuffle_preview,
-                    content=mini_grid,
-                ),
-                ft.Button("Resolver Cubo", on_click=enter_rubik_ui),
-            ],
-        ),
-    )
-
 def color_morph_animation(callback):
     def animate_morph(e: ft.Event[ft.Button]):
-        is_circle = container.border_radius == CONST_WIDTH / 2
-        container.border_radius = 10 if is_circle else CONST_WIDTH / 2
+        is_circle = container.border_radius == COMPONENT_SIZE / 2
+        container.border_radius = 10 if is_circle else COMPONENT_SIZE / 2
         container.bgcolor = ft.Colors.WHITE_54 if is_circle else ft.Colors.AMBER_400
         container.update()
         callback(inspect.getsource(color_morph_animation))
@@ -162,20 +114,24 @@ def color_morph_animation(callback):
             horizontal_alignment=ft.CrossAxisAlignment.CENTER,
             controls=[
                 container := ft.Container(
-                    width=CONST_WIDTH,
-                    height=CONST_HEIGHT,
+                    width=COMPONENT_SIZE,
+                    height=COMPONENT_SIZE,
                     bgcolor=ft.Colors.WHITE_54,
                     border_radius=10,
                     animate=ft.Animation(
-                        duration=600,
+                        duration=DEFAULT_ANIMATION_DURATION_MS,
                         curve=ft.AnimationCurve.EASE_IN_OUT,
                     ),
                 ),
-                ft.Button("¡Transfórmame!", on_click=animate_morph),
+                ft.Button(
+                    color=ft.Colors.WHITE,
+                    bgcolor=ft.Colors.PINK_ACCENT_400,
+                    content="¡Transfórmame!",
+                    on_click=animate_morph
+                ),
             ],
         ),
     )
-
 
 def offset_slide_animation(callback):
     def animate_offset(e: ft.Event[ft.Button]):
@@ -192,21 +148,25 @@ def offset_slide_animation(callback):
             horizontal_alignment=ft.CrossAxisAlignment.CENTER,
             controls=[
                 container := ft.Container(
-                    width=CONST_WIDTH,
-                    height=CONST_HEIGHT,
+                    width=COMPONENT_SIZE,
+                    height=COMPONENT_SIZE,
                     bgcolor=ft.Colors.CYAN_300,
                     border_radius=15,
                     offset=ft.Offset(0, 0),
                     animate_offset=ft.Animation(
-                        duration=500,
+                        duration=DEFAULT_ANIMATION_DURATION_MS,
                         curve=ft.AnimationCurve.ELASTIC_OUT,
                     ),
                 ),
-                ft.Button("¡Deslízame!", on_click=animate_offset),
+                ft.Button(
+                    color=ft.Colors.WHITE,
+                    bgcolor=ft.Colors.PINK_ACCENT_400,
+                    content="¡Deslízame!",
+                    on_click=animate_offset
+                ),
             ],
         ),
     )
-
 
 def flip_switcher_animation(callback):
     def animate_switch(e: ft.Event[ft.Button]):
@@ -217,21 +177,29 @@ def flip_switcher_animation(callback):
         callback(inspect.getsource(flip_switcher_animation))
 
     icon_a = ft.Container(
-        width=CONST_WIDTH,
-        height=CONST_HEIGHT,
+        width=COMPONENT_SIZE,
+        height=COMPONENT_SIZE,
         bgcolor=ft.Colors.WHITE_54,
         border_radius=15,
         alignment=ft.Alignment.CENTER,
-        content=ft.Icon(ft.Icons.ROCKET_LAUNCH, size=60, color=ft.Colors.PINK_ACCENT),
+        content=ft.Icon(
+            ft.Icons.ROCKET_LAUNCH,
+            size=60,
+            color=ft.Colors.PINK_ACCENT
+        ),
     )
 
     icon_b = ft.Container(
-        width=CONST_WIDTH,
-        height=CONST_HEIGHT,
+        width=COMPONENT_SIZE,
+        height=COMPONENT_SIZE,
         bgcolor=ft.Colors.DEEP_PURPLE_400,
         border_radius=75,
         alignment=ft.Alignment.CENTER,
-        content=ft.Icon(ft.Icons.AUTO_AWESOME, size=60, color=ft.Colors.AMBER_300),
+        content=ft.Icon(
+            ft.Icons.AUTO_AWESOME,
+            size=60,
+            color=ft.Colors.AMBER_300
+        ),
     )
 
     return ft.SafeArea(
@@ -241,133 +209,20 @@ def flip_switcher_animation(callback):
                 switcher := ft.AnimatedSwitcher(
                     content=icon_a,
                     transition=ft.AnimatedSwitcherTransition.SCALE,
-                    duration=500,
-                    reverse_duration=300,
+                    duration=DEFAULT_ANIMATION_DURATION_MS,
+                    reverse_duration=DEFAULT_ANIMATION_DURATION_MS,
                     switch_in_curve=ft.AnimationCurve.BOUNCE_OUT,
                 ),
-                ft.Button("¡Cámbiamelo!", on_click=animate_switch),
+                ft.Button(
+                    color=ft.Colors.WHITE,
+                    bgcolor=ft.Colors.PINK_ACCENT_400,
+                    content="¡Cámbiamelo!",
+                    on_click=animate_switch),
             ],
         ),
     )
-
-  
-def heart_animation(callback):
-    def animate_heart(e: ft.Event[ft.Button]):
-        is_broken = container.border_radius == 75
-        container.border_radius = 10 if is_broken else 75
-        container.bgcolor = ft.Colors.RED_300 if is_broken else ft.Colors.RED_600
-        container.update()
-        callback(inspect.getsource(heart_animation))
-
-    return ft.SafeArea(
-        content=ft.Column(
-            horizontal_alignment=ft.CrossAxisAlignment.CENTER,
-            controls=[
-                container := ft.Container(
-                    width=CONST_WIDTH,
-                    height=CONST_HEIGHT,
-                    bgcolor=ft.Colors.RED_600,
-                    border_radius=75,
-                    animate=ft.Animation(
-                        duration=500,
-                        curve=ft.AnimationCurve.BOUNCE_OUT,
-                    ),
-                    alignment=ft.Alignment.CENTER,
-                    content=ft.Icon(ft.Icons.FAVORITE, size=60, color=ft.Colors.WHITE)
-                ),
-                ft.Button("¡Rómpeme!", on_click=animate_heart),
-            ],
-        ),
-    )
-
-
-def phone_animation(callback):
-    def animate_phone(e: ft.Event[ft.Button]):
-        # Alterna el zoom (escala entre 1.0 y 1.3)
-        container.scale = 1.3 if container.scale == 1.0 else 1.0
-        container.update()
-        callback(inspect.getsource(phone_animation))
-        
-    return ft.SafeArea(
-        content=ft.Column(
-            controls=[
-                container := ft.Container(
-                    width=CONST_WIDTH,
-                    height=CONST_HEIGHT,
-                    bgcolor=ft.Colors.TEAL_400,
-                    border_radius=30,
-                    scale=1.0,
-                    animate_scale=ft.Animation(
-                        duration=400,
-                        curve=ft.AnimationCurve.EASE_IN_OUT,
-                    ),
-                    alignment=ft.Alignment.CENTER,
-                    content=ft.Icon(ft.Icons.PHONE, size=60, color=ft.Colors.WHITE)
-                ),
-                ft.Button("¡Llámame!", on_click=animate_phone),
-            ],
-        ),
-    )
-
-
-def ball_animation(callback):
-    import time
-
-    def animate_ball(e: ft.Event[ft.Button]):
-        # Secuencia de rebotes sostenidos con transformación de forma (Pelota <-> Triángulo)
-        for _ in range(3):
-            # Transforma a triángulo y salta alto
-            container.border_radius = 0
-            container.bgcolor = ft.Colors.PURPLE_ACCENT
-            container.content = ft.Icon(ft.Icons.CHANGE_HISTORY, size=60, color=ft.Colors.WHITE)
-            container.offset = ft.Offset(0, -0.5)
-            container.update()
-            time.sleep(0.15)
-            
-            container.offset = ft.Offset(0, 0)
-            container.update()
-            time.sleep(0.15)
-            
-            # Regresa a pelota (círculo) y da un rebote medio
-            container.border_radius = CONST_WIDTH / 2
-            container.bgcolor = ft.Colors.ORANGE_ACCENT
-            container.content = ft.Icon(ft.Icons.SPORTS_BASKETBALL, size=60, color=ft.Colors.WHITE)
-            container.offset = ft.Offset(0, -0.3)
-            container.update()
-            time.sleep(0.12)
-            
-            container.offset = ft.Offset(0, 0)
-            container.update()
-            time.sleep(0.12)
-
-        callback(inspect.getsource(ball_animation))
-     
-    return ft.SafeArea(
-        content=ft.Column(
-                controls=[
-                container := ft.Container(
-                    width=CONST_WIDTH,
-                    height=CONST_HEIGHT,
-                    bgcolor=ft.Colors.ORANGE_ACCENT,
-                    border_radius=CONST_WIDTH / 2,
-                    offset=ft.Offset(0, 0),
-                    animate_offset=ft.Animation(
-                        duration=120,
-                        curve=ft.AnimationCurve.EASE_OUT,
-                    ),
-                    alignment=ft.Alignment.CENTER,
-                    content=ft.Icon(ft.Icons.SPORTS_BASKETBALL, size=60, color=ft.Colors.WHITE)
-                ),
-                ft.Button("¡Bótame!", on_click=animate_ball),
-            ],
-        )
 
 def sunflower_animation(callback):
-    import logging
-    import math
-    import random
-    from dataclasses import dataclass
-
     logging.basicConfig(level=logging.INFO)
     logging.getLogger("flet_components").setLevel(logging.INFO)
 
@@ -480,7 +335,11 @@ def sunflower_animation(callback):
                         controls=[
                             ft.Row(
                                 controls=[
-                                    ft.Text("Sunflower", size=20, expand=True),
+                                    ft.Text(
+                                        value="Sunflower",
+                                        size=20,
+                                        expand=True
+                                    ),
                                     close_button,
                                 ],
                                 vertical_alignment=ft.CrossAxisAlignment.CENTER,
@@ -506,14 +365,16 @@ def sunflower_animation(callback):
         callback(inspect.getsource(sunflower_animation))
 
     flower_preview = ft.Stack(
-        width=CONST_WIDTH,
-        height=CONST_HEIGHT,
+        width=COMPONENT_SIZE,
+        height=COMPONENT_SIZE,
         controls=make_seed_controls(
             compute_seeds(MAX_SEEDS // 2),
             animated=True,
         ),
     )
     button = ft.Button(
+        color=ft.Colors.WHITE,
+        bgcolor=ft.Colors.PINK_ACCENT_400,
         content="¡Florece!",
         on_click=open_sunflower,
         align=ft.Alignment.CENTER,
@@ -522,18 +383,18 @@ def sunflower_animation(callback):
     return ft.SafeArea(
         content=ft.Column(
             horizontal_alignment=ft.CrossAxisAlignment.CENTER,
-            controls=[flower_preview, button],
+            controls=[
+                flower_preview, 
+                button
+            ],
         ),
     )
-
 
 def timer_animation(callback):
     DIALOG_WIDTH = 760
     DIALOG_HEIGHT = 620
 
     def open_timer(event: ft.Event[ft.Button]):
-        import asyncio
-        import time
         page = event.control.page
         state = {
             "elapsed": 0,
@@ -561,11 +422,11 @@ def timer_animation(callback):
             weight=ft.FontWeight.BOLD,
         )
         start_button = ft.FilledButton(
-            "Iniciar",
+            content="Iniciar",
             icon=ft.Icons.PLAY_ARROW,
         )
         stop_button = ft.TextButton(
-            "Detener",
+            content="Detener",
             icon=ft.Icons.STOP,
             disabled=True,
         )
@@ -653,7 +514,10 @@ def timer_animation(callback):
                                         timer_text,
                                         ft.Row(
                                             alignment=ft.MainAxisAlignment.CENTER,
-                                            controls=[start_button, stop_button],
+                                            controls=[
+                                                start_button, 
+                                                stop_button
+                                            ],
                                         ),
                                     ],
                                 ),
@@ -667,9 +531,9 @@ def timer_animation(callback):
         )
         callback(inspect.getsource(timer_animation))
 
-    container = ft.Container(
-        width=CONST_WIDTH,
-        height=CONST_HEIGHT,
+    icon_timer = ft.Container(
+        width=COMPONENT_SIZE,
+        height=COMPONENT_SIZE,
         content=ft.Icon(
             ft.Icons.TIMER,
             size=90,
@@ -678,6 +542,8 @@ def timer_animation(callback):
         alignment=ft.Alignment.CENTER,
     )
     button = ft.Button(
+        color=ft.Colors.WHITE,
+        bgcolor=ft.Colors.PINK_ACCENT_400,
         content="¡Apúrate!",
         on_click=open_timer,
         align=ft.Alignment.CENTER,
@@ -686,6 +552,212 @@ def timer_animation(callback):
     return ft.SafeArea(
         content=ft.Column(
             horizontal_alignment=ft.CrossAxisAlignment.CENTER,
-            controls=[container, button],
+            controls=[
+                icon_timer,
+                button
+            ],
+        ),
+    )
+
+def heart_animation(callback):
+    def animate_heart(e: ft.Event[ft.Button]):
+        is_broken = container.border_radius == 75
+        container.border_radius = 10 if is_broken else 75
+        container.bgcolor = ft.Colors.RED_300 if is_broken else ft.Colors.RED_600
+        container.update()
+        callback(inspect.getsource(heart_animation))
+
+    return ft.SafeArea(
+        content=ft.Column(
+            horizontal_alignment=ft.CrossAxisAlignment.CENTER,
+            controls=[
+                container := ft.Container(
+                    width=COMPONENT_SIZE,
+                    height=COMPONENT_SIZE,
+                    bgcolor=ft.Colors.RED_600,
+                    border_radius=75,
+                    animate=ft.Animation(
+                        duration=DEFAULT_ANIMATION_DURATION_MS,
+                        curve=ft.AnimationCurve.BOUNCE_OUT,
+                    ),
+                    alignment=ft.Alignment.CENTER,
+                    content=ft.Icon(
+                        ft.Icons.FAVORITE, 
+                        size=60,
+                        color=ft.Colors.WHITE
+                    ),
+                ),
+                ft.Button(
+                    color=ft.Colors.WHITE,
+                    bgcolor=ft.Colors.PINK_ACCENT_400,
+                    content="¡Rómpeme!",
+                    on_click=animate_heart
+                ),
+            ],
+        ),
+    )
+
+def phone_animation(callback):
+    def animate_phone(e: ft.Event[ft.Button]):
+        # Alterna el zoom (escala entre 1.0 y 1.3)
+        container.scale = 1.3 if container.scale == 1.0 else 1.0
+        container.update()
+        callback(inspect.getsource(phone_animation))
+        
+    return ft.SafeArea(
+        content=ft.Column(
+            horizontal_alignment=ft.CrossAxisAlignment.CENTER,
+            controls=[
+                container := ft.Container(
+                    width=COMPONENT_SIZE,
+                    height=COMPONENT_SIZE,
+                    bgcolor=ft.Colors.TEAL_400,
+                    border_radius=30,
+                    scale=1.0,
+                    animate_scale=ft.Animation(
+                        duration=DEFAULT_ANIMATION_DURATION_MS,
+                        curve=ft.AnimationCurve.EASE_IN_OUT,
+                    ),
+                    alignment=ft.Alignment.CENTER,
+                    content=ft.Icon(
+                        ft.Icons.PHONE,
+                        size=60,
+                        color=ft.Colors.WHITE)
+                ),
+                ft.Button(
+                    color=ft.Colors.WHITE,
+                    bgcolor=ft.Colors.PINK_ACCENT_400,
+                    content="¡Llámame!",
+                    on_click=animate_phone
+                ),
+            ],
+        ),
+    )
+
+def ball_animation(callback):
+    def animate_ball(e: ft.Event[ft.Button]):
+        # Secuencia de rebotes sostenidos con transformación de forma (Pelota <-> Triángulo)
+        for _ in range(3):
+            # Transforma a triángulo y salta alto
+            container.border_radius = 0
+            container.bgcolor = ft.Colors.PURPLE_ACCENT
+            container.content = ft.Icon(ft.Icons.CHANGE_HISTORY, size=60, color=ft.Colors.WHITE)
+            container.offset = ft.Offset(0, -0.5)
+            container.update()
+            time.sleep(0.15)
+            
+            container.offset = ft.Offset(0, 0)
+            container.update()
+            time.sleep(0.15)
+            
+            # Regresa a pelota (círculo) y da un rebote medio
+            container.border_radius = COMPONENT_SIZE / 2
+            container.bgcolor = ft.Colors.ORANGE_ACCENT
+            container.content = ft.Icon(ft.Icons.SPORTS_BASKETBALL, size=60, color=ft.Colors.WHITE)
+            container.offset = ft.Offset(0, -0.3)
+            container.update()
+            time.sleep(0.12)
+            
+            container.offset = ft.Offset(0, 0)
+            container.update()
+            time.sleep(0.12)
+
+        callback(inspect.getsource(ball_animation))
+     
+    return ft.SafeArea(
+        content=ft.Column(
+                horizontal_alignment=ft.CrossAxisAlignment.CENTER,
+                controls=[
+                container := ft.Container(
+                    width=COMPONENT_SIZE,
+                    height=COMPONENT_SIZE,
+                    bgcolor=ft.Colors.ORANGE_ACCENT,
+                    border_radius=COMPONENT_SIZE / 2,
+                    offset=ft.Offset(0, 0),
+                    animate_offset=ft.Animation(
+                        duration=120,
+                        curve=ft.AnimationCurve.EASE_OUT,
+                    ),
+                    alignment=ft.Alignment.CENTER,
+                    content=ft.Icon(
+                        icon=ft.Icons.SPORTS_BASKETBALL,
+                        size=60,
+                        color=ft.Colors.WHITE
+                    ),
+                ),
+                ft.Button(
+                    color=ft.Colors.WHITE,
+                    bgcolor=ft.Colors.PINK_ACCENT_400,
+                    content="¡Bótame!",
+                    on_click=animate_ball
+                ),
+            ],
+        )
+    )
+
+def rubik_cube_component(callback):
+    palette = [
+        ft.Colors.RED_500,
+        ft.Colors.GREEN_500,
+        ft.Colors.BLUE_500,
+        ft.Colors.YELLOW_400,
+        ft.Colors.ORANGE_500,
+        ft.Colors.WHITE,
+    ]
+
+    mini_grid = ft.GridView(
+        runs_count=3,
+        width=COMPONENT_SIZE,
+        height=COMPONENT_SIZE,
+        spacing=3,
+        run_spacing=3,
+        controls=[
+            ft.Container(
+                bgcolor=random.choice(palette),
+                border_radius=4,
+                animate=ft.Animation(
+                    duration=400,
+                    curve=ft.AnimationCurve.EASE_IN_OUT
+                ),
+            )
+            for _ in range(9)
+        ],
+    )
+
+    def shuffle_preview(e):
+        for cell in mini_grid.controls:
+            cell.bgcolor = random.choice(palette)
+        mini_grid.update()
+        callback(inspect.getsource(rubik_cube_component))
+
+    def enter_rubik_ui(e: ft.Event[ft.Button]):
+        callback(inspect.getsource(rubik_cube_component))
+        open_rubik_interface(e.page)
+
+    def shuffle_preview(e):
+        for cell in mini_grid.controls:
+            cell.bgcolor = random.choice(palette)
+        mini_grid.update()
+        callback(inspect.getsource(rubik_cube_component))
+
+    def enter_rubik_ui(e: ft.Event[ft.Button]):
+        callback(inspect.getsource(rubik_cube_component))
+        open_rubik_interface(e.page)
+
+    return ft.SafeArea(
+        content=ft.Column(
+            horizontal_alignment=ft.CrossAxisAlignment.CENTER,
+            controls=[
+                ft.GestureDetector(
+                    on_tap=shuffle_preview,
+                    on_pan_update=shuffle_preview,
+                    content=mini_grid,
+                ),
+                ft.Button(
+                    color=ft.Colors.WHITE,
+                    bgcolor=ft.Colors.PINK_ACCENT_400,
+                    content="Resolver Cubo",
+                    on_click=enter_rubik_ui),
+            ],
         ),
     )
