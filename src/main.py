@@ -74,6 +74,9 @@ def main(page: ft.Page):
         widget.sunflower_animation(show_code),
         widget.timer_animation(show_code),
         widget.rubik_cube_component(show_code),
+        widget.heart_animation(show_code),
+        widget.phone_animation(show_code),
+        widget.ball_animation(show_code),
     )
 
     left_column = ft.GridView(

@@ -250,6 +250,117 @@ def flip_switcher_animation(callback):
         ),
     )
 
+  
+def heart_animation(callback):
+    def animate_heart(e: ft.Event[ft.Button]):
+        is_broken = container.border_radius == 75
+        container.border_radius = 10 if is_broken else 75
+        container.bgcolor = ft.Colors.RED_300 if is_broken else ft.Colors.RED_600
+        container.update()
+        callback(inspect.getsource(heart_animation))
+
+    return ft.SafeArea(
+        content=ft.Column(
+            horizontal_alignment=ft.CrossAxisAlignment.CENTER,
+            controls=[
+                container := ft.Container(
+                    width=CONST_WIDTH,
+                    height=CONST_HEIGHT,
+                    bgcolor=ft.Colors.RED_600,
+                    border_radius=75,
+                    animate=ft.Animation(
+                        duration=500,
+                        curve=ft.AnimationCurve.BOUNCE_OUT,
+                    ),
+                    alignment=ft.Alignment.CENTER,
+                    content=ft.Icon(ft.Icons.FAVORITE, size=60, color=ft.Colors.WHITE)
+                ),
+                ft.Button("¡Rómpeme!", on_click=animate_heart),
+            ],
+        ),
+    )
+
+
+def phone_animation(callback):
+    def animate_phone(e: ft.Event[ft.Button]):
+        # Alterna el zoom (escala entre 1.0 y 1.3)
+        container.scale = 1.3 if container.scale == 1.0 else 1.0
+        container.update()
+        callback(inspect.getsource(phone_animation))
+        
+    return ft.SafeArea(
+        content=ft.Column(
+            controls=[
+                container := ft.Container(
+                    width=CONST_WIDTH,
+                    height=CONST_HEIGHT,
+                    bgcolor=ft.Colors.TEAL_400,
+                    border_radius=30,
+                    scale=1.0,
+                    animate_scale=ft.Animation(
+                        duration=400,
+                        curve=ft.AnimationCurve.EASE_IN_OUT,
+                    ),
+                    alignment=ft.Alignment.CENTER,
+                    content=ft.Icon(ft.Icons.PHONE, size=60, color=ft.Colors.WHITE)
+                ),
+                ft.Button("¡Llámame!", on_click=animate_phone),
+            ],
+        ),
+    )
+
+
+def ball_animation(callback):
+    import time
+
+    def animate_ball(e: ft.Event[ft.Button]):
+        # Secuencia de rebotes sostenidos con transformación de forma (Pelota <-> Triángulo)
+        for _ in range(3):
+            # Transforma a triángulo y salta alto
+            container.border_radius = 0
+            container.bgcolor = ft.Colors.PURPLE_ACCENT
+            container.content = ft.Icon(ft.Icons.CHANGE_HISTORY, size=60, color=ft.Colors.WHITE)
+            container.offset = ft.Offset(0, -0.5)
+            container.update()
+            time.sleep(0.15)
+            
+            container.offset = ft.Offset(0, 0)
+            container.update()
+            time.sleep(0.15)
+            
+            # Regresa a pelota (círculo) y da un rebote medio
+            container.border_radius = CONST_WIDTH / 2
+            container.bgcolor = ft.Colors.ORANGE_ACCENT
+            container.content = ft.Icon(ft.Icons.SPORTS_BASKETBALL, size=60, color=ft.Colors.WHITE)
+            container.offset = ft.Offset(0, -0.3)
+            container.update()
+            time.sleep(0.12)
+            
+            container.offset = ft.Offset(0, 0)
+            container.update()
+            time.sleep(0.12)
+
+        callback(inspect.getsource(ball_animation))
+     
+    return ft.SafeArea(
+        content=ft.Column(
+                controls=[
+                container := ft.Container(
+                    width=CONST_WIDTH,
+                    height=CONST_HEIGHT,
+                    bgcolor=ft.Colors.ORANGE_ACCENT,
+                    border_radius=CONST_WIDTH / 2,
+                    offset=ft.Offset(0, 0),
+                    animate_offset=ft.Animation(
+                        duration=120,
+                        curve=ft.AnimationCurve.EASE_OUT,
+                    ),
+                    alignment=ft.Alignment.CENTER,
+                    content=ft.Icon(ft.Icons.SPORTS_BASKETBALL, size=60, color=ft.Colors.WHITE)
+                ),
+                ft.Button("¡Bótame!", on_click=animate_ball),
+            ],
+        )
 
 def sunflower_animation(callback):
     import logging
@@ -407,7 +518,7 @@ def sunflower_animation(callback):
         on_click=open_sunflower,
         align=ft.Alignment.CENTER,
     )
-
+    
     return ft.SafeArea(
         content=ft.Column(
             horizontal_alignment=ft.CrossAxisAlignment.CENTER,
@@ -571,7 +682,7 @@ def timer_animation(callback):
         on_click=open_timer,
         align=ft.Alignment.CENTER,
     )
-
+    
     return ft.SafeArea(
         content=ft.Column(
             horizontal_alignment=ft.CrossAxisAlignment.CENTER,
