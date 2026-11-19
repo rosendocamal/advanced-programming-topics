@@ -76,7 +76,13 @@ def main(page: ft.Page):
         widget.sunflower_animation(show_code),
         widget.timer_animation(show_code),
         widget.rubik_cube_component(show_code),
-    )
+        widget.heart_animation(show_code),
+        widget.phone_animation(show_code),
+        widget.ball_animation(show_code),
+        widget.sound_box_component(show_code),
+        widget.color_palette_component(show_code),
+        widget.clock_component(show_code),
+    ]
 
     left_column = ft.GridView(
                             expand=True,
@@ -86,18 +92,10 @@ def main(page: ft.Page):
                             spacing=3,
                             run_spacing=3,
                             controls=[
-                                i for i in left_column_content
+                                i for i in widgets
                             ]
                         )
-
-    right_column = ft.Column(
-                            width=SCREEN_800,
-                            scroll=ft.ScrollMode.ALWAYS,
-                            scroll_interval=0,
-                            on_scroll=on_scroll,
-                            controls=[code_txt]
-                        )
-
+    
     button_full_screen_app = ft.IconButton(hover_color=ft.Colors.PINK_ACCENT, icon=ft.Icons.FULLSCREEN, icon_color=ft.Colors.WHITE, on_click=full_screen_app)
 
     page.add(

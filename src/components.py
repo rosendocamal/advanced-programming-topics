@@ -1,10 +1,12 @@
 import flet as ft
 import inspect, math, random, time, logging, asyncio
+import tkinter
 from dataclasses import dataclass
 from rubik_view import open_rubik_interface
-import random
-import flet as ft
-import inspect, random
+
+_tk = tkinter.Tk()
+SCREEN_WIDTH = _tk.winfo_screenwidth()
+_tk.destroy()
 
 COMPONENT_SIZE = int(SCREEN_WIDTH / 12.8)
 DEFAULT_ANIMATION_DURATION_MS = 600
