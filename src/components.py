@@ -2,6 +2,7 @@ from rubik_view import open_rubik_interface
 import random
 import flet as ft
 import inspect, random
+import os
 
 CONST_WIDTH = 150
 CONST_HEIGHT = 150
@@ -577,4 +578,386 @@ def timer_animation(callback):
             horizontal_alignment=ft.CrossAxisAlignment.CENTER,
             controls=[container, button],
         ),
+    )
+
+def sound_box_component(show_code):
+    code_snippet = '''def sound_box_component(show_code):
+    import os
+
+    def play_audio(e):
+        base_dir = os.path.dirname(os.path.abspath(__file__))
+        audio_path = os.path.join(base_dir, "assets", "song.mp3")
+        try:
+            os.startfile(audio_path)
+            show_code("Reproduciendo canción: song.mp3")
+        except Exception as ex:
+            show_code(f"Error al reproducir audio: {ex}")
+
+    return ft.Container(
+        content=ft.Column(
+            [
+                ft.Icon(ft.Icons.MUSIC_NOTE, color=ft.Colors.WHITE, size=40),
+                ft.Text("Caja de Sonidos", color=ft.Colors.WHITE, weight=ft.FontWeight.BOLD)
+            ],
+            alignment=ft.MainAxisAlignment.CENTER,
+            horizontal_alignment=ft.CrossAxisAlignment.CENTER
+        ),
+        bgcolor=ft.Colors.PINK_700,
+        border_radius=ft.BorderRadius.all(15),
+        on_click=play_audio,
+        ink=True
+    )'''
+
+    import os
+    def play_audio(e):
+        base_dir = os.path.dirname(os.path.abspath(__file__))
+        audio_path = os.path.join(base_dir, "assets", "song.mp3")
+        try:
+            os.startfile(audio_path)
+            show_code(code_snippet)
+        except Exception as ex:
+            show_code(f"Error al reproducir audio: {ex}")
+
+    return ft.Container(
+        content=ft.Column(
+            [
+                ft.Icon(ft.Icons.MUSIC_NOTE, color=ft.Colors.WHITE, size=40),
+                ft.Text("Caja de Sonidos", color=ft.Colors.WHITE, weight=ft.FontWeight.BOLD)
+            ],
+            alignment=ft.MainAxisAlignment.CENTER,
+            horizontal_alignment=ft.CrossAxisAlignment.CENTER
+        ),
+        bgcolor=ft.Colors.PINK_700,
+        border_radius=ft.BorderRadius.all(15),
+        on_click=play_audio,
+        ink=True
+    )
+
+def color_palette_component(show_code):
+    code_snippet = '''def color_palette_component(show_code):
+    import flet as ft
+
+    def change_theme(e):
+        palette_type = e.control.data
+        page = e.page
+        
+        # Cambia los colores de toda la interfaz según la opción seleccionada
+        if palette_type == "color1":
+            card_container.bgcolor = ft.Colors.BLUE_GREY_800
+            page.bgcolor = ft.Colors.BLUE_900  # Fondo general de la app
+        elif palette_type == "color2":
+            card_container.bgcolor = ft.Colors.DEEP_PURPLE_800
+            page.bgcolor = ft.Colors.INDIGO_900  # Fondo general de la app
+        elif palette_type == "color3":
+            card_container.bgcolor = ft.Colors.BROWN_800
+            page.bgcolor = ft.Colors.DEEP_ORANGE_900  # Fondo general de la app
+            
+        card_container.update()
+        page.update()
+        show_code(code_snippet)
+
+    card_container = ft.Container(
+        content=ft.Column(
+            [
+                ft.Row(
+                    [
+                        ft.Icon(ft.Icons.PALETTE, color=ft.Colors.WHITE, size=22),
+                        ft.Text("Paleta Colores", color=ft.Colors.WHITE, weight=ft.FontWeight.BOLD, size=12),
+                    ],
+                    alignment=ft.MainAxisAlignment.CENTER,
+                    spacing=5
+                ),
+                # Opción 1
+                ft.GestureDetector(
+                    on_tap=change_theme,
+                    data="color1",
+                    content=ft.Container(
+                        content=ft.Row([
+                            ft.Text("Color 1", size=10, color=ft.Colors.WHITE, weight=ft.FontWeight.BOLD),
+                            ft.Row([
+                                ft.Container(width=12, height=12, bgcolor=ft.Colors.BLUE_400, border_radius=3),
+                                ft.Container(width=12, height=12, bgcolor=ft.Colors.ORANGE_400, border_radius=3),
+                            ], spacing=2)
+                        ], alignment=ft.MainAxisAlignment.SPACE_BETWEEN),
+                        bgcolor=ft.Colors.PURPLE_900,
+                        padding=6,
+                        border_radius=5,
+                        ink=True
+                    )
+                ),
+                # Opción 2
+                ft.GestureDetector(
+                    on_tap=change_theme,
+                    data="color2",
+                    content=ft.Container(
+                        content=ft.Row([
+                            ft.Text("Color 2", size=10, color=ft.Colors.WHITE, weight=ft.FontWeight.BOLD),
+                            ft.Row([
+                                ft.Container(width=10, height=10, bgcolor=ft.Colors.BLUE_400, border_radius=2),
+                                ft.Container(width=10, height=10, bgcolor=ft.Colors.CYAN_400, border_radius=2),
+                                ft.Container(width=10, height=10, bgcolor=ft.Colors.PURPLE_400, border_radius=2),
+                            ], spacing=2)
+                        ], alignment=ft.MainAxisAlignment.SPACE_BETWEEN),
+                        bgcolor=ft.Colors.PURPLE_900,
+                        padding=6,
+                        border_radius=5,
+                        ink=True
+                    )
+                ),
+                # Opción 3
+                ft.GestureDetector(
+                    on_tap=change_theme,
+                    data="color3",
+                    content=ft.Container(
+                        content=ft.Row([
+                            ft.Text("Color 3", size=10, color=ft.Colors.WHITE, weight=ft.FontWeight.BOLD),
+                            ft.Row([
+                                ft.Container(width=10, height=10, bgcolor=ft.Colors.RED_400, border_radius=2),
+                                ft.Container(width=10, height=10, bgcolor=ft.Colors.ORANGE_400, border_radius=2),
+                                ft.Container(width=10, height=10, bgcolor=ft.Colors.AMBER_400, border_radius=2),
+                            ], spacing=2)
+                        ], alignment=ft.MainAxisAlignment.SPACE_BETWEEN),
+                        bgcolor=ft.Colors.PURPLE_900,
+                        padding=6,
+                        border_radius=5,
+                        ink=True
+                    )
+                ),
+            ],
+            alignment=ft.MainAxisAlignment.CENTER,
+            spacing=4
+        ),
+        bgcolor=ft.Colors.PURPLE_700,
+        border_radius=ft.BorderRadius.all(15),
+        padding=8,
+        on_click=lambda e: show_code(code_snippet),
+        ink=True
+    )
+    return card_container'''
+
+    def change_theme(e):
+        palette_type = e.control.data
+        page = e.page
+
+        if palette_type == "color1":
+            card_container.bgcolor = ft.Colors.BLUE_GREY_800
+            page.bgcolor = ft.Colors.BLUE_900
+        elif palette_type == "color2":
+            card_container.bgcolor = ft.Colors.DEEP_PURPLE_800
+            page.bgcolor = ft.Colors.INDIGO_900
+        elif palette_type == "color3":
+            card_container.bgcolor = ft.Colors.BROWN_800
+            page.bgcolor = ft.Colors.DEEP_ORANGE_900
+
+        card_container.update()
+        page.update()
+        show_code(code_snippet)
+
+    card_container = ft.Container(
+        content=ft.Column(
+            [
+                ft.Row(
+                    [
+                        ft.Icon(
+                            ft.Icons.PALETTE, color=ft.Colors.WHITE, size=22
+                        ),
+                        ft.Text(
+                            "Paleta Colores",
+                            color=ft.Colors.WHITE,
+                            weight=ft.FontWeight.BOLD,
+                            size=12,
+                        ),
+                    ],
+                    alignment=ft.MainAxisAlignment.CENTER,
+                    spacing=5,
+                ),
+                # Opción 1
+                ft.GestureDetector(
+                    on_tap=change_theme,
+                    data="color1",
+                    content=ft.Container(
+                        content=ft.Row(
+                            [
+                                ft.Text(
+                                    "Color 1",
+                                    size=10,
+                                    color=ft.Colors.WHITE,
+                                    weight=ft.FontWeight.BOLD,
+                                ),
+                                ft.Row(
+                                    [
+                                        ft.Container(
+                                            width=12,
+                                            height=12,
+                                            bgcolor=ft.Colors.BLUE_400,
+                                            border_radius=3,
+                                        ),
+                                        ft.Container(
+                                            width=12,
+                                            height=12,
+                                            bgcolor=ft.Colors.ORANGE_400,
+                                            border_radius=3,
+                                        ),
+                                    ],
+                                    spacing=2,
+                                ),
+                            ],
+                            alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
+                        ),
+                        bgcolor=ft.Colors.PURPLE_900,
+                        padding=6,
+                        border_radius=5,
+                        ink=True,
+                    ),
+                ),
+                # Opción 2
+                ft.GestureDetector(
+                    on_tap=change_theme,
+                    data="color2",
+                    content=ft.Container(
+                        content=ft.Row(
+                            [
+                                ft.Text(
+                                    "Color 2",
+                                    size=10,
+                                    color=ft.Colors.WHITE,
+                                    weight=ft.FontWeight.BOLD,
+                                ),
+                                ft.Row(
+                                    [
+                                        ft.Container(
+                                            width=10,
+                                            height=10,
+                                            bgcolor=ft.Colors.BLUE_400,
+                                            border_radius=2,
+                                        ),
+                                        ft.Container(
+                                            width=10,
+                                            height=10,
+                                            bgcolor=ft.Colors.CYAN_400,
+                                            border_radius=2,
+                                        ),
+                                        ft.Container(
+                                            width=10,
+                                            height=10,
+                                            bgcolor=ft.Colors.PURPLE_400,
+                                            border_radius=2,
+                                        ),
+                                    ],
+                                    spacing=2,
+                                ),
+                            ],
+                            alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
+                        ),
+                        bgcolor=ft.Colors.PURPLE_900,
+                        padding=6,
+                        border_radius=5,
+                        ink=True,
+                    ),
+                ),
+                # Opción 3
+                ft.GestureDetector(
+                    on_tap=change_theme,
+                    data="color3",
+                    content=ft.Container(
+                        content=ft.Row(
+                            [
+                                ft.Text(
+                                    "Color 3",
+                                    size=10,
+                                    color=ft.Colors.WHITE,
+                                    weight=ft.FontWeight.BOLD,
+                                ),
+                                ft.Row(
+                                    [
+                                        ft.Container(
+                                            width=10,
+                                            height=10,
+                                            bgcolor=ft.Colors.RED_400,
+                                            border_radius=2,
+                                        ),
+                                        ft.Container(
+                                            width=10,
+                                            height=10,
+                                            bgcolor=ft.Colors.ORANGE_400,
+                                            border_radius=2,
+                                        ),
+                                        ft.Container(
+                                            width=10,
+                                            height=10,
+                                            bgcolor=ft.Colors.AMBER_400,
+                                            border_radius=2,
+                                        ),
+                                    ],
+                                    spacing=2,
+                                ),
+                            ],
+                            alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
+                        ),
+                        bgcolor=ft.Colors.PURPLE_900,
+                        padding=6,
+                        border_radius=5,
+                        ink=True,
+                    ),
+                ),
+            ],
+            alignment=ft.MainAxisAlignment.CENTER,
+            spacing=4,
+        ),
+        bgcolor=ft.Colors.PURPLE_700,
+        border_radius=ft.BorderRadius.all(15),
+        padding=8,
+        on_click=lambda e: show_code(code_snippet),
+        ink=True,
+    )
+    return card_container
+
+def clock_component(show_code):
+    import datetime
+    now = datetime.datetime.now()
+    time_str = now.strftime("%H:%M")
+    date_str = now.strftime("%d/%m/%Y")
+
+    code_snippet = f'''def clock_component(show_code):
+    import datetime
+    now = datetime.datetime.now()
+    time_str = now.strftime("%H:%M")
+    date_str = now.strftime("%d/%m/%Y")
+
+    def show_clock_info(e):
+        show_code(f"Reloj 24h y Fecha:\\nHora: {{time_str}}\\nFecha: {{date_str}}")
+
+    return ft.Container(
+        content=ft.Column(
+            [
+                ft.Icon(ft.Icons.ACCESS_TIME, color=ft.Colors.WHITE, size=30),
+                ft.Text("{time_str}", color=ft.Colors.WHITE, weight=ft.FontWeight.BOLD, size=16),
+                ft.Text("{date_str}", color=ft.Colors.WHITE70, size=12)
+            ],
+            alignment=ft.MainAxisAlignment.CENTER,
+            horizontal_alignment=ft.CrossAxisAlignment.CENTER
+        ),
+        bgcolor=ft.Colors.INDIGO_700,
+        border_radius=ft.BorderRadius.all(15),
+        on_click=show_clock_info,
+        ink=True
+    )'''
+
+    def show_clock_info(e):
+        show_code(code_snippet)
+
+    return ft.Container(
+        content=ft.Column(
+            [
+                ft.Icon(ft.Icons.ACCESS_TIME, color=ft.Colors.WHITE, size=30),
+                ft.Text(time_str, color=ft.Colors.WHITE, weight=ft.FontWeight.BOLD, size=16),
+                ft.Text(date_str, color=ft.Colors.WHITE_70, size=12)
+            ],
+            alignment=ft.MainAxisAlignment.CENTER,
+            horizontal_alignment=ft.CrossAxisAlignment.CENTER
+        ),
+        bgcolor=ft.Colors.INDIGO_700,
+        border_radius=ft.BorderRadius.all(15),
+        on_click=show_clock_info,
+        ink=True
     )
