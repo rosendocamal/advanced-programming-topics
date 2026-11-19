@@ -10,9 +10,17 @@ s = State()
 sem = threading.Semaphore()
 
 tk = tkinter.Tk()
+
 SCREEN_WIDTH = tk.winfo_screenwidth()
 SCREEN_HEIGHT = tk.winfo_screenheight()
 SCREEN_800 = int(SCREEN_WIDTH / 2.4)
+SCREEN_250 = int(SCREEN_WIDTH / 7.68)
+BORDER_RADIUS_20 = 20
+MARGIN_15 = 15
+PADDING_30 = 30
+
+CODE_TXT_VALUE = "Selecciona un botón para generar un evento."
+
 
 def main(page: ft.Page):
     page.title = "Tópicos Avanzados de Programación"
@@ -21,26 +29,21 @@ def main(page: ft.Page):
     page.theme_mode = ft.ThemeMode.DARK
     page.adaptive = False
     page.window.resizable = True
-    page.window.width = SCREEN_WIDTH
-    page.window.height = SCREEN_HEIGHT
+    page.window.min_height = SCREEN_WIDTH
+    page.window.min_height = SCREEN_HEIGHT
     page.window.focused = False
-    page.window.prevent_close = False
+    page.window.prevent_close = True
     page.window.full_screen = False
-
-
-    code_txt_value = "Selecciona un botón para generar un evento."
-    code_txt = ft.Text(
-        value=code_txt_value,
-        color=ft.Colors.PINK_ACCENT,
-        italic=True,
-    )
-
+    page.window.title_bar_hidden = True
+    page.window.frameless = True
+    page.window.maximized = True
+    
     def show_code(code = str()):
         code_txt.value = code
         code_txt.update()
 
     def clean_code():
-        code_txt.value = code_txt_value
+        code_txt.value = CODE_TXT_VALUE
         code_txt.update()
 
     async def close_app():
@@ -63,8 +66,7 @@ def main(page: ft.Page):
             finally:
                 sem.release()
 
-    # Aquí es donde se agregarán las animaciones de components.py
-    left_column_content = (
+    widgets = [
         widget.opacity_animation(show_code),
         widget.rotation_animation(show_code),
         widget.scale_animation(show_code),
@@ -74,9 +76,6 @@ def main(page: ft.Page):
         widget.sunflower_animation(show_code),
         widget.timer_animation(show_code),
         widget.rubik_cube_component(show_code),
-        widget.sound_box_component(show_code),
-        widget.color_palette_component(show_code),
-        widget.clock_component(show_code),
     )
 
     left_column = ft.GridView(
@@ -111,37 +110,74 @@ def main(page: ft.Page):
                         width=SCREEN_800,
                         height=SCREEN_800,
                         expand=True,
-                        margin=15,
-                        padding=30,
+                        margin=MARGIN_15,
+                        padding=PADDING_30,
                         bgcolor=ft.Colors.PINK_ACCENT,
-                        border_radius=20,
-                        content=left_column,
+                        border_radius=BORDER_RADIUS_20,
+                        content=ft.GridView(
+                                expand=True,
+                                runs_count=3,
+                                max_extent=SCREEN_250,
+                                child_aspect_ratio=1.0,
+                                spacing=3,
+                                run_spacing=3,
+                                controls=widgets
+                        ),
                         alignment=ft.Alignment.CENTER,
                     ),
                     ft.Container(
                         width=SCREEN_800,
                         height=SCREEN_800,
                         expand=True,
-                        margin=15,
-                        padding=30,
+                        margin=MARGIN_15,
+                        padding=PADDING_30,
                         bgcolor=ft.Colors.WHITE_10,
-                        border_radius=20,
-                        content=right_column,
+                        border_radius=BORDER_RADIUS_20,
+                        content=(right_column := ft.Column(
+                                width=SCREEN_800,
+                                scroll=ft.ScrollMode.ALWAYS,
+                                scroll_interval=0,
+                                on_scroll=on_scroll,
+                                controls=[
+                                    code_txt := ft.Text(
+                                        value=CODE_TXT_VALUE,
+                                        color=ft.Colors.PINK_ACCENT,
+                                        italic=True,
+                                    )
+                                ],
+                            )),
                         alignment=ft.Alignment.TOP_LEFT,
                     ),
                 ]
             )
         ),
         ft.BottomAppBar(
-            margin=15,
-            border_radius=ft.BorderRadius.all(20),
+            margin=MARGIN_15,
+            border_radius=ft.BorderRadius.all(BORDER_RADIUS_20),
             bgcolor=ft.Colors.PINK_ACCENT_100,
             content=ft.Row(
                 controls=[
-                    ft.Container(expand=True),
-                    ft.IconButton(hover_color=ft.Colors.PINK_ACCENT, icon=ft.Icons.CLEAR_ROUNDED, icon_color=ft.Colors.WHITE, on_click=clean_code),
-                    button_full_screen_app,
-                    ft.IconButton(hover_color=ft.Colors.PINK_ACCENT, icon=ft.Icons.EXIT_TO_APP, icon_color=ft.Colors.WHITE, on_click=close_app, on_long_press=close_app),
+                    ft.Container(
+                        expand=True
+                    ),
+                    ft.IconButton(
+                        hover_color=ft.Colors.PINK_ACCENT,
+                        icon=ft.Icons.CLEAR_ROUNDED,
+                        icon_color=ft.Colors.WHITE,
+                        on_click=clean_code
+                    ),
+                    button_full_screen_app := ft.IconButton(
+                        hover_color=ft.Colors.PINK_ACCENT,
+                        icon=ft.Icons.FULLSCREEN, icon_color=ft.Colors.WHITE,
+                        on_click=full_screen_app
+                    ),
+                    ft.IconButton(
+                        hover_color=ft.Colors.PINK_ACCENT,
+                        icon=ft.Icons.EXIT_TO_APP,
+                        icon_color=ft.Colors.WHITE,
+                        on_click=close_app,
+                        on_long_press=close_app
+                    ),
                 ]
             ),
         )

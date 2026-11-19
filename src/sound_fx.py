@@ -1,12 +1,4 @@
-import io
-import math
-import os
-import platform
-import struct
-import subprocess
-import tempfile
-import threading
-import wave
+import io, math, os, platform, struct, subprocess, tempfile, threading, wave
 
 
 def _generate_wav_bytes(samples: list[float], sample_rate: int = 22050) -> bytes:

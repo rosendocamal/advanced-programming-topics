@@ -1,6 +1,4 @@
-import base64
-import sys
-import cv2
+import base64, sys, cv2
 import numpy as np
 
 
@@ -10,15 +8,24 @@ def open_camera_capture(idx: int):
         return cv2.VideoCapture(idx, cv2.CAP_AVFOUNDATION)
     return cv2.VideoCapture(idx)
 
-# Recorrido físico natural: 4 giros horizontales seguidos + arriba + abajo
+
 SCAN_ORDER = [
     ("F", "1/6: Cara VERDE al frente (Blanco arriba)"),
-    ("R", "2/6: Gira a la izquierda → Cara ROJA al frente (Blanco arriba)"),
-    ("B", "3/6: Gira a la izquierda → Cara AZUL al frente (Blanco arriba)"),
-    ("L", "4/6: Gira a la izquierda → Cara NARANJA al frente (Blanco arriba)"),
-    ("U", "5/6: Vuelve al Verde e inclina hacia abajo → Cara BLANCA al frente"),
-    ("D", "6/6: Inclina hacia arriba → Cara AMARILLA al frente"),
+    ("R", "2/6: Cara ROJA al frente (Blanco arriba)"),
+    ("B", "3/6: Cara AZUL al frente (Blanco arriba)"),
+    ("L", "4/6: Cara NARANJA al frente (Blanco arriba)"),
+    ("U", "5/6: Cara BLANCA al frente"),
+    ("D", "6/6: Cara AMARILLA al frente"),
 ]
+
+FACE_COLOR_NAMES = {
+    "U": "BLANCO",
+    "R": "ROJO",
+    "F": "VERDE",
+    "D": "AMARILLO",
+    "L": "NARANJA",
+    "B": "AZUL",
+}
 
 BGR_PREVIEW = {
     "U": (255, 255, 255),
@@ -78,8 +85,9 @@ def reclassify_all_faces(
     return final_faces
 
 
-def find_mac_camera_index() -> int:
-    available = []
+def detect_available_cameras() -> list[int]:
+    """Devuelve la lista ordenada de índices de cámara funcionales en el sistema."""
+    available: list[tuple[int, int, int]] = []
     for idx in (0, 1, 2):
         cap = open_camera_capture(idx)
         if cap.isOpened():
@@ -90,21 +98,23 @@ def find_mac_camera_index() -> int:
             cap.release()
 
     if not available:
-        return 0
+        return [0]
 
-    # En macOS, preferir cámara 16:9 integrada sobre Continuity Camera 4:3
     if sys.platform == "darwin" and len(available) > 1:
-        for idx, w, h in available:
-            if abs((w / float(h)) - (16.0 / 9.0)) < 0.08:
-                return idx
-    return available[0][0]
+        available.sort(key=lambda item: 0 if abs((item[1] / float(item[2])) - (16.0 / 9.0)) < 0.08 else 1)
+
+    return [item[0] for item in available]
+
+
+def find_mac_camera_index() -> int:
+    return detect_available_cameras()[0]
 
 
 def process_camera_frame(
     frame,
-    expected_center: str,
     calibrated_labs: dict[str, np.ndarray],
-) -> tuple[str, list[str], list[np.ndarray]]:
+    scanned_faces: set[str] | None = None,
+) -> tuple[str, list[str], list[np.ndarray], str, bool]:
     # Efecto espejo para que mover la mano a la derecha se vea a la derecha en pantalla
     frame = cv2.flip(frame, 1)
     h_raw, w_raw, _ = frame.shape
@@ -117,13 +127,19 @@ def process_camera_frame(
     square = cv2.resize(square, (300, 300))
     blurred = cv2.GaussianBlur(square, (5, 5), 0)
 
+    # Identifica qué cara estás mostrando por su centro real (permite empezar con cualquier cara)
+    center_roi = blurred[125:175, 125:175]
+    center_lab = extract_patch_lab(center_roi)
+    detected_center_code = classify_lab_sample(center_lab, calibrated_labs)
+    is_new_face = scanned_faces is None or (detected_center_code not in scanned_faces)
+
+    live_refs = dict(calibrated_labs)
+    if is_new_face:
+        live_refs[detected_center_code] = center_lab
+
     cell = 100
     detected_9: list[str] = []
     patches_lab_9: list[np.ndarray] = []
-
-    live_refs = dict(calibrated_labs)
-    center_roi = blurred[125:175, 125:175]
-    live_refs[expected_center] = extract_patch_lab(center_roi)
 
     for row in range(3):
         row_items = []
@@ -136,7 +152,7 @@ def process_camera_frame(
 
             roi = blurred[cy - r : cy + r, cx - r : cx + r]
             p_lab = extract_patch_lab(roi)
-            code = expected_center if (row == 1 and col == 1) else classify_lab_sample(p_lab, live_refs)
+            code = detected_center_code if (row == 1 and col == 1) else classify_lab_sample(p_lab, live_refs)
             row_items.append((code, p_lab))
 
             cv2.rectangle(square, (x0 + 2, y0 + 2), (x0 + cell - 2, y0 + cell - 2), (20, 20, 20), 4)
@@ -148,7 +164,6 @@ def process_camera_frame(
             detected_9.append(c_code)
             patches_lab_9.append(c_lab)
 
-    detected_9[4] = expected_center
     _, buffer = cv2.imencode(".jpg", square, [cv2.IMWRITE_JPEG_QUALITY, 80])
     b64_str = base64.b64encode(buffer).decode("utf-8")
-    return b64_str, detected_9, patches_lab_9
+    return b64_str, detected_9, patches_lab_9, detected_center_code, is_new_face
