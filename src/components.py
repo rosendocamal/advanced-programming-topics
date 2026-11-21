@@ -559,6 +559,73 @@ def timer_animation(callback):
         ),
     )
 
+def rubik_cube_component(callback):
+    palette = [
+        ft.Colors.RED_500,
+        ft.Colors.GREEN_500,
+        ft.Colors.BLUE_500,
+        ft.Colors.YELLOW_400,
+        ft.Colors.ORANGE_500,
+        ft.Colors.WHITE,
+    ]
+
+    mini_grid = ft.GridView(
+        runs_count=3,
+        width=COMPONENT_SIZE,
+        height=COMPONENT_SIZE,
+        spacing=3,
+        run_spacing=3,
+        controls=[
+            ft.Container(
+                bgcolor=random.choice(palette),
+                border_radius=4,
+                animate=ft.Animation(
+                    duration=400,
+                    curve=ft.AnimationCurve.EASE_IN_OUT
+                ),
+            )
+            for _ in range(9)
+        ],
+    )
+
+    def shuffle_preview(e):
+        for cell in mini_grid.controls:
+            cell.bgcolor = random.choice(palette)
+        mini_grid.update()
+        callback(inspect.getsource(rubik_cube_component))
+
+    def enter_rubik_ui(e: ft.Event[ft.Button]):
+        callback(inspect.getsource(rubik_cube_component))
+        open_rubik_interface(e.page)
+
+    def shuffle_preview(e):
+        for cell in mini_grid.controls:
+            cell.bgcolor = random.choice(palette)
+        mini_grid.update()
+        callback(inspect.getsource(rubik_cube_component))
+
+    def enter_rubik_ui(e: ft.Event[ft.Button]):
+        callback(inspect.getsource(rubik_cube_component))
+        open_rubik_interface(e.page)
+
+    return ft.SafeArea(
+        content=ft.Column(
+            horizontal_alignment=ft.CrossAxisAlignment.CENTER,
+            controls=[
+                ft.GestureDetector(
+                    on_tap=shuffle_preview,
+                    on_pan_update=shuffle_preview,
+                    content=mini_grid,
+                ),
+                ft.Button(
+                    color=ft.Colors.WHITE,
+                    bgcolor=ft.Colors.PINK_ACCENT_400,
+                    content="Resolver Cubo",
+                    on_click=enter_rubik_ui),
+            ],
+        ),
+    )
+
 def heart_animation(callback):
     def animate_heart(e: ft.Event[ft.Button]):
         is_broken = container.border_radius == 75
@@ -693,71 +760,4 @@ def ball_animation(callback):
                 ),
             ],
         )
-    )
-
-def rubik_cube_component(callback):
-    palette = [
-        ft.Colors.RED_500,
-        ft.Colors.GREEN_500,
-        ft.Colors.BLUE_500,
-        ft.Colors.YELLOW_400,
-        ft.Colors.ORANGE_500,
-        ft.Colors.WHITE,
-    ]
-
-    mini_grid = ft.GridView(
-        runs_count=3,
-        width=COMPONENT_SIZE,
-        height=COMPONENT_SIZE,
-        spacing=3,
-        run_spacing=3,
-        controls=[
-            ft.Container(
-                bgcolor=random.choice(palette),
-                border_radius=4,
-                animate=ft.Animation(
-                    duration=400,
-                    curve=ft.AnimationCurve.EASE_IN_OUT
-                ),
-            )
-            for _ in range(9)
-        ],
-    )
-
-    def shuffle_preview(e):
-        for cell in mini_grid.controls:
-            cell.bgcolor = random.choice(palette)
-        mini_grid.update()
-        callback(inspect.getsource(rubik_cube_component))
-
-    def enter_rubik_ui(e: ft.Event[ft.Button]):
-        callback(inspect.getsource(rubik_cube_component))
-        open_rubik_interface(e.page)
-
-    def shuffle_preview(e):
-        for cell in mini_grid.controls:
-            cell.bgcolor = random.choice(palette)
-        mini_grid.update()
-        callback(inspect.getsource(rubik_cube_component))
-
-    def enter_rubik_ui(e: ft.Event[ft.Button]):
-        callback(inspect.getsource(rubik_cube_component))
-        open_rubik_interface(e.page)
-
-    return ft.SafeArea(
-        content=ft.Column(
-            horizontal_alignment=ft.CrossAxisAlignment.CENTER,
-            controls=[
-                ft.GestureDetector(
-                    on_tap=shuffle_preview,
-                    on_pan_update=shuffle_preview,
-                    content=mini_grid,
-                ),
-                ft.Button(
-                    color=ft.Colors.WHITE,
-                    bgcolor=ft.Colors.PINK_ACCENT_400,
-                    content="Resolver Cubo",
-                    on_click=enter_rubik_ui),
-            ],
-        ),
     )
