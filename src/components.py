@@ -1,5 +1,5 @@
 import flet as ft
-import inspect, math, random, time, logging, asyncio
+import inspect, math, random, time, logging, asyncio, os, datetime
 from dataclasses import dataclass
 from rubik_view import open_rubik_interface
 from main import SCREEN_WIDTH
@@ -559,6 +559,73 @@ def timer_animation(callback):
         ),
     )
 
+def rubik_cube_component(callback):
+    palette = [
+        ft.Colors.RED_500,
+        ft.Colors.GREEN_500,
+        ft.Colors.BLUE_500,
+        ft.Colors.YELLOW_400,
+        ft.Colors.ORANGE_500,
+        ft.Colors.WHITE,
+    ]
+
+    mini_grid = ft.GridView(
+        runs_count=3,
+        width=COMPONENT_SIZE,
+        height=COMPONENT_SIZE,
+        spacing=3,
+        run_spacing=3,
+        controls=[
+            ft.Container(
+                bgcolor=random.choice(palette),
+                border_radius=4,
+                animate=ft.Animation(
+                    duration=400,
+                    curve=ft.AnimationCurve.EASE_IN_OUT
+                ),
+            )
+            for _ in range(9)
+        ],
+    )
+
+    def shuffle_preview(e):
+        for cell in mini_grid.controls:
+            cell.bgcolor = random.choice(palette)
+        mini_grid.update()
+        callback(inspect.getsource(rubik_cube_component))
+
+    def enter_rubik_ui(e: ft.Event[ft.Button]):
+        callback(inspect.getsource(rubik_cube_component))
+        open_rubik_interface(e.page)
+
+    def shuffle_preview(e):
+        for cell in mini_grid.controls:
+            cell.bgcolor = random.choice(palette)
+        mini_grid.update()
+        callback(inspect.getsource(rubik_cube_component))
+
+    def enter_rubik_ui(e: ft.Event[ft.Button]):
+        callback(inspect.getsource(rubik_cube_component))
+        open_rubik_interface(e.page)
+
+    return ft.SafeArea(
+        content=ft.Column(
+            horizontal_alignment=ft.CrossAxisAlignment.CENTER,
+            controls=[
+                ft.GestureDetector(
+                    on_tap=shuffle_preview,
+                    on_pan_update=shuffle_preview,
+                    content=mini_grid,
+                ),
+                ft.Button(
+                    color=ft.Colors.WHITE,
+                    bgcolor=ft.Colors.PINK_ACCENT_400,
+                    content="Resolver Cubo",
+                    on_click=enter_rubik_ui),
+            ],
+        ),
+    )
+
 def heart_animation(callback):
     def animate_heart(e: ft.Event[ft.Button]):
         is_broken = container.border_radius == 75
@@ -695,69 +762,195 @@ def ball_animation(callback):
         )
     )
 
-def rubik_cube_component(callback):
-    palette = [
-        ft.Colors.RED_500,
-        ft.Colors.GREEN_500,
-        ft.Colors.BLUE_500,
-        ft.Colors.YELLOW_400,
-        ft.Colors.ORANGE_500,
-        ft.Colors.WHITE,
-    ]
+def sound_box_component(callback):
+    def play_audio(e):
+        base_dir = os.path.dirname(os.path.abspath(__file__))
+        audio_path = os.path.join(base_dir, "assets", "song.mp3")
 
-    mini_grid = ft.GridView(
-        runs_count=3,
-        width=COMPONENT_SIZE,
-        height=COMPONENT_SIZE,
-        spacing=3,
-        run_spacing=3,
-        controls=[
-            ft.Container(
-                bgcolor=random.choice(palette),
-                border_radius=4,
-                animate=ft.Animation(
-                    duration=400,
-                    curve=ft.AnimationCurve.EASE_IN_OUT
+        callback(inspect.getsource(sound_box_component))
+
+        try:
+            os.startfile(audio_path)
+        except Exception as ex:
+            print(f"Error al reproducir audio: {ex}")
+
+    return ft.Container(
+        content=ft.Column(
+            controls=[
+                ft.Icon(
+                    ft.Icons.MUSIC_NOTE, 
+                    color=ft.Colors.WHITE, 
+                    size=40
                 ),
-            )
-            for _ in range(9)
-        ],
+                ft.Text(
+                    value="Caja de Sonidos",
+                    color=ft.Colors.WHITE,
+                    weight=ft.FontWeight.BOLD
+                )
+            ],
+            alignment=ft.MainAxisAlignment.CENTER,
+            horizontal_alignment=ft.CrossAxisAlignment.CENTER
+        ),
+        bgcolor=ft.Colors.PINK_700,
+        border_radius=ft.BorderRadius.all(15),
+        on_click=play_audio,
+        ink=True
     )
 
-    def shuffle_preview(e):
-        for cell in mini_grid.controls:
-            cell.bgcolor = random.choice(palette)
-        mini_grid.update()
-        callback(inspect.getsource(rubik_cube_component))
+def color_palette_component(callback):
+    def gesture_detector(data: str,
+                         txt: str,
+                         color_a: ft.Colors,
+                         color_b: ft.Colors,
+                         color_c: ft.Colors):
+        return ft.GestureDetector(
+            on_tap=change_theme,
+            data=data,
+            content=ft.Container(
+                content=ft.Row(
+                    controls=[
+                        ft.Text(
+                            value=txt,
+                            size=10,
+                            color=ft.Colors.WHITE,
+                            weight=ft.FontWeight.BOLD,
+                        ),
+                        ft.Row(
+                            controls=[
+                                ft.Container(
+                                    width=10,
+                                    height=10,
+                                    bgcolor=color_a,
+                                    border_radius=2,
+                                ),
+                                ft.Container(
+                                    width=10,
+                                    height=10,
+                                    bgcolor=color_b,
+                                    border_radius=2,
+                                ),
+                                ft.Container(
+                                    width=10,
+                                    height=10,
+                                    bgcolor=color_c,
+                                    border_radius=2,
+                                ),
+                            ],
+                            spacing=2,
+                        ),
+                    ],
+                    alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
+                ),
+                bgcolor=ft.Colors.PURPLE_900,
+                padding=6,
+                border_radius=5,
+                ink=True,
+            ),
+        )
 
-    def enter_rubik_ui(e: ft.Event[ft.Button]):
-        callback(inspect.getsource(rubik_cube_component))
-        open_rubik_interface(e.page)
+    def change_theme(e):
+        palette_type = e.control.data
+        page = e.page
 
-    def shuffle_preview(e):
-        for cell in mini_grid.controls:
-            cell.bgcolor = random.choice(palette)
-        mini_grid.update()
-        callback(inspect.getsource(rubik_cube_component))
+        if palette_type == "color1":
+            card_container.bgcolor = ft.Colors.BLUE_GREY_800
+            page.bgcolor = ft.Colors.BLUE_900
+        elif palette_type == "color2":
+            card_container.bgcolor = ft.Colors.DEEP_PURPLE_800
+            page.bgcolor = ft.Colors.INDIGO_900
+        elif palette_type == "color3":
+            card_container.bgcolor = ft.Colors.BROWN_800
+            page.bgcolor = ft.Colors.DEEP_ORANGE_900
 
-    def enter_rubik_ui(e: ft.Event[ft.Button]):
-        callback(inspect.getsource(rubik_cube_component))
-        open_rubik_interface(e.page)
+        card_container.update()
+        page.update()
+        callback(inspect.getsource(color_palette_component))
 
     return ft.SafeArea(
-        content=ft.Column(
-            horizontal_alignment=ft.CrossAxisAlignment.CENTER,
-            controls=[
-                ft.GestureDetector(
-                    on_tap=shuffle_preview,
-                    on_pan_update=shuffle_preview,
-                    content=mini_grid,
-                ),
-                ft.Button(
-                    color=ft.Colors.WHITE,
-                    bgcolor=ft.Colors.PINK_ACCENT_400,
-                    content="Resolver Cubo",
-                    on_click=enter_rubik_ui),
-            ],
+        card_container := ft.Container(
+            content=ft.Column(
+                controls=[
+                    ft.Row(
+                        controls=[
+                            ft.Icon(
+                                icon=ft.Icons.PALETTE, 
+                                color=ft.Colors.WHITE, 
+                                size=22
+                            ),
+                            ft.Text(
+                                value="Paleta Colores",
+                                color=ft.Colors.WHITE,
+                                weight=ft.FontWeight.BOLD,
+                                size=12,
+                            ),
+                        ],
+                        alignment=ft.MainAxisAlignment.CENTER,
+                        spacing=5,
+                    ),
+                    gesture_detector(
+                        "color1",
+                        "Color 1",
+                        ft.Colors.BLUE_400,
+                        ft.Colors.ORANGE_400,
+                        ft.Colors.RED_400
+                    ),
+                    gesture_detector(
+                        "color2",
+                        "Color 2",
+                        ft.Colors.BLUE_400,
+                        ft.Colors.CYAN_400,
+                        ft.Colors.PURPLE_400
+                    ),
+                    gesture_detector(
+                        "color3",
+                        "Color 3",
+                        ft.Colors.RED_400,
+                        ft.Colors.ORANGE_400,
+                        ft.Colors.AMBER_400
+                    )
+                ],
+                alignment=ft.MainAxisAlignment.CENTER,
+                spacing=4,
+            ),
+            bgcolor=ft.Colors.PURPLE_700,
+            border_radius=ft.BorderRadius.all(15),
+            padding=8,
+            on_click=None,
+            ink=True,
         ),
+    )
+
+def clock_component(callback):
+    now = datetime.datetime.now()
+    time_str = now.strftime("%H:%M")
+    date_str = now.strftime("%d/%m/%Y")
+
+
+    def show_clock_info(e):
+        callback(inspect.getsource(clock_component))
+
+    return ft.Container(
+        content=ft.Column(
+            controls=[
+                ft.Icon(
+                    icon=ft.Icons.ACCESS_TIME,
+                    color=ft.Colors.WHITE,
+                    size=30),
+                ft.Text(
+                    value=time_str,
+                    color=ft.Colors.WHITE,
+                    weight=ft.FontWeight.BOLD,
+                    size=16),
+                ft.Text(
+                    value=date_str,
+                    color=ft.Colors.WHITE_70,
+                    size=12)
+            ],
+            alignment=ft.MainAxisAlignment.CENTER,
+            horizontal_alignment=ft.CrossAxisAlignment.CENTER
+        ),
+        bgcolor=ft.Colors.INDIGO_700,
+        border_radius=ft.BorderRadius.all(15),
+        on_click=show_clock_info,
+        ink=True
     )
