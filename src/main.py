@@ -79,25 +79,8 @@ def main(page: ft.Page):
         widget.heart_animation(show_code),
         widget.phone_animation(show_code),
         widget.ball_animation(show_code),
-        widget.sound_box_component(show_code),
-        widget.color_palette_component(show_code),
-        widget.clock_component(show_code),
     ]
-
-    left_column = ft.GridView(
-                            expand=True,
-                            runs_count=3,
-                            max_extent=250,
-                            child_aspect_ratio=1.0,
-                            spacing=3,
-                            run_spacing=3,
-                            controls=[
-                                i for i in widgets
-                            ]
-                        )
     
-    button_full_screen_app = ft.IconButton(hover_color=ft.Colors.PINK_ACCENT, icon=ft.Icons.FULLSCREEN, icon_color=ft.Colors.WHITE, on_click=full_screen_app)
-
     page.add(
         ft.SafeArea(
             expand=True,
