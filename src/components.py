@@ -829,7 +829,6 @@ def ball_animation(callback):
     )
 
 def sound_box_component(callback):
-
   def play_audio(e):
     base_dir = os.path.dirname(os.path.abspath(__file__))
     audio_path = os.path.join(base_dir, "assets", "song.mp3")
@@ -850,6 +849,29 @@ def sound_box_component(callback):
         subprocess.run(["xdg-open", audio_path], check=True)
     except Exception as ex:
       print(f"Error al reproducir audio: {ex}")
+
+  return ft.Container(
+        on_click=play_audio,
+        bgcolor=ft.Colors.PINK_900,
+        border_radius=12,
+        padding=12,
+        alignment=ft.Alignment.CENTER,
+        content=ft.Column(
+            horizontal_alignment=ft.CrossAxisAlignment.CENTER,
+            controls=[
+                ft.Icon(
+                    ft.Icons.MUSIC_NOTE,
+                    color=ft.Colors.WHITE,
+                    size=40,
+                ),
+                ft.Text(
+                    value="Caja de Sonidos",
+                    color=ft.Colors.WHITE,
+                    weight=ft.FontWeight.BOLD,
+                ),
+            ],
+        ),
+    )
 
 def color_palette_component(callback):
     def gesture_detector(data: str,

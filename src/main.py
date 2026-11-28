@@ -82,7 +82,6 @@ def main(page: ft.Page):
         widget.sound_box_component(show_code),
         widget.color_palette_component(show_code),
         widget.clock_component(show_code),
-
     ]
     
     page.add(
